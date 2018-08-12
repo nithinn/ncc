@@ -1,15 +1,15 @@
 #include <iostream>
 
-typedef struct _test_t 
+struct A
 {
-    int b;
-} test_t;
+    int a;
+};
 
-class test
+class B
 {
 public:
-    test() {};
-    virtual ~test() {};
+    B() {};
+    virtual ~B() {};
 
     void function_name()
     {
@@ -17,13 +17,11 @@ public:
     }
 private:
     /* data */
-    int a;
+    int b;
 };
 
 int main(int argc, const char *argv[])
 {
-    A b;
-
     if (true)
     {
         int a = 10;

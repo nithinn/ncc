@@ -13,33 +13,47 @@ from clang.cindex import CursorKind
 
 
 class Rule(object):
-    def __init__(self, kind, clang_kind, help, pattern='^.*$', cxx_construct=None):
-        self._kind = kind
-        self._clang_kind = clang_kind
-        self._help = help
-        self._pattern = pattern
-        self._cxx_construct = cxx_construct
+    def __init__(self, clang_kind_str, parent_kind=None, help="", pattern_str='^.*$'):
+        self.clang_kind_str = clang_kind_str
+        self.parent_kind = parent_kind
+        self.help = help
+        self.pattern_str = pattern_str
+        self.pattern = re.compile(pattern_str)
 
 
-default_rule_db = {}
+user_kind_map = {}
 
-default_rule_db["StructName"] = Rule("StructName",
-                                     "struct_decl",
-                                     "Structure delcaration name, for e.g. in 'struct MyStruct' "
-                                     "MyStruct is the StructName")
+user_kind_map["StructName"] = Rule("struct_decl",
+                                   "Structure delcaration name, for e.g. in 'struct MyStruct' "
+                                   "MyStruct is the StructName")
 
-default_rule_db["UnionName"] = Rule("UnionName", "union_decl", "Union delcaration name, "
-                                    "for e.g. in 'union MyUnion' MyUnion is the UnionName")
-default_rule_db["ClassName"] = Rule("ClassName", "class_decl", "Class delcaration name, "
-                                    "for e.g. in 'class MyClass' MyClass is the ClassName")
-default_rule_db["EnumName"] = Rule("EnumName", "enum_decl", "Enum delcaration name, "
-                                   "for e.g. in 'enum MyEnum' MyEnum is the EnumName")
-default_rule_db["ClassMemberVariable"] = Rule("ClassMemberVariable", "field_decl",
-                                              "Member variable declartion in a class ",
-                                              "^.*$", "class")
-default_rule_db["StructMemberVariable"] = Rule("StructMemberVariable", "field_decl",
-                                               "Member variable declartion in a struct ",
-                                               "^.*$", "struct")
+user_kind_map["UnionName"] = Rule("union_decl",
+                                  "Union delcaration name, for e.g. in 'union MyUnion' MyUnion "
+                                  "is the UnionName")
+
+user_kind_map["ClassName"] = Rule("class_decl",
+                                  "Class delcaration name, "
+                                  "for e.g. in 'class MyClass' MyClass is the ClassName")
+
+user_kind_map["EnumName"] = Rule("enum_decl",
+                                 "Enum delcaration name, "
+                                 "for e.g. in 'enum MyEnum' MyEnum is the EnumName")
+
+user_kind_map["ClassMemberVariable"] = Rule("field_decl",
+                                            CursorKind.CLASS_DECL,
+                                            "Member variable declartion in a class ")
+
+user_kind_map["StructMemberVariable"] = Rule("field_decl",
+                                             CursorKind.STRUCT_DECL,
+                                             "Member variable declartion in a struct ")
+
+# Clang cursor kind to ncc Defined cursor map
+cursor_kind_map = {}
+cursor_kind_map["struct_decl"] = ["StructName"]
+cursor_kind_map["class_decl"] = ["ClassName"]
+cursor_kind_map["enum_decl"] = ["EnumName"]
+cursor_kind_map["union_decl"] = ["UnionName"]
+cursor_kind_map["field_decl"] = ["ClassMemberVariable", "StructMemberVariable"]
 
 SpecialKind = {CursorKind.STRUCT_DECL: 1, CursorKind.CLASS_DECL: 1}
 
@@ -111,13 +125,6 @@ class Options:
                 r = yaml.safe_load(stylefile)
                 pp.pprint(r)
 
-    def print_args(self):
-        print("recurse      : {}".format(self.args.recurse))
-        print("paths        : {}".format(self.args.path))
-        print("style_file   : {}".format(self.args.style_file))
-        print("cdbdir       : {}".format(self.args.cdbdir))
-        print("dump         : {}".format(self.args.dump))
-
     def has_next_file(self):
         return self._has_files
 
@@ -132,12 +139,13 @@ class Options:
 
 class RulesDb(object):
     def __init__(self, style_file=None, db_dir=None):
-        self._compile_db = None
-        self._rule_db = {}
+        self.__compile_db = None
+        self.__rule_db = {}
+        self.__clang_db = {}
 
         if db_dir:
             try:
-                self._compile_db = CompilationDatabase.fromDirectory(db_dir)
+                self.__compile_db = CompilationDatabase.fromDirectory(db_dir)
             except Exception as e:
                 sys.exit(1)
 
@@ -151,12 +159,14 @@ class RulesDb(object):
             try:
                 cursor_kinds = {kind.name.lower(): kind for kind in CursorKind.get_all_kinds()}
 
-                # for (kind, pattern) in style_rules.items():
-                #     if cursor_kinds[default_rule_db[kind]._clang_kind]:
-                #         self._rule_db[kind] = default_rule_db[kind]
-                #         self._rule_db[kind]._pattern = re.compile(pattern)
-                self._rule_db = {cursor_kinds[kind]: re.compile(pattern)
-                                 for (kind, pattern) in style_rules.items()}
+                for (user_kind, pattern_str) in style_rules.items():
+                    clang_kind_str = user_kind_map[user_kind].clang_kind_str
+                    clang_kind = cursor_kinds[clang_kind_str]
+                    if clang_kind:
+                        self.__rule_db[user_kind] = user_kind_map[user_kind]
+                        self.__rule_db[user_kind].pattern_str = pattern_str
+                        self.__rule_db[user_kind].pattern = re.compile(pattern_str)
+                        self.__clang_db[clang_kind] = cursor_kind_map[clang_kind_str]
 
             except KeyError as e:
                 sys.stderr.write('{} is not a valid C/C++ construct name\n'.format(e.message))
@@ -165,51 +175,74 @@ class RulesDb(object):
                     sys.stderr.write('Did you mean CursorKind: {}\n'.format(fixit[0]))
                 sys.exit(1)
         else:
-            self._rule_db = default_rule_db
+            self.__rule_db = user_kind_map
+
+    def get_compile_commands(self, filename):
+        if self.__compile_db:
+            return self.__compile_db.getCompileCommands(filename)
+        return None
+
+    def is_rule_enabled(self, kind):
+        if self.__clang_db.get(kind):
+            return True
+        return False
+
+    def get_user_kinds(self, kind):
+        return self.__clang_db.get(kind)
+
+    def get_rule(self, user_kind):
+        return self.__rule_db.get(user_kind)
 
 
 class Validator(object):
-    def __init__(self, rule_db, compile_db):
-        self._rule_db = rule_db
-        self._compile_db = compile_db
-        self.k_stack = KindStack()
+    def __init__(self, rule_db):
+        self.rule_db = rule_db
 
     def validate(self, filename):
-        commands = None
-        if self._compile_db is not None:
-            commands = self._compile_db.getCompileCommands(filename)
-
+        commands = self.rule_db.get_compile_commands(filename)
         index = Index.create()
         unit = index.parse(filename, args=commands)
         cursor = unit.cursor
 
-        return self.check(cursor, filename)
+        k_stack = KindStack()
+        return self.check(cursor, k_stack, filename)
 
-    def match_pattern(self, node):
-        if self.do_check(node) and self.is_invalid(node):
-            self.notify_error(node)
-            return 1
-        return 0
-
-    def check(self, node, filename):
+    def check(self, node, k_stack, filename):
         errors = 0
         for child in node.get_children():
             if self.is_local(child, filename):
-                errors += self.match_pattern(child)
+                errors += self.match_pattern(child, self.get_rule(child, k_stack))
                 if child.kind in SpecialKind:
-                    self.k_stack.push(child.kind)
-                    errors += self.check(child, filename)
-                    self.k_stack.pop()
+                    k_stack.push(child.kind)
+                    errors += self.check(child, k_stack, filename)
+                    k_stack.pop()
                 else:
-                    errors += self.check(child, filename)
+                    errors += self.check(child, k_stack, filename)
 
         return errors
 
-    """ Returns True is pattern in available for the Cursor kind """
-    def do_check(self, node):
-        if self._rule_db.get(node.kind):
-            return True
-        return False
+    def get_rule(self, node, k_stack):
+        if not self.rule_db.is_rule_enabled(node.kind):
+            return None
+
+        user_kinds = self.rule_db.get_user_kinds(node.kind)
+        if len(user_kinds) == 1:
+            return self.rule_db.get_rule(user_kinds[0])
+
+        for kind in user_kinds:
+            rule = self.rule_db.get_rule(kind)
+            if rule.parent_kind == k_stack.peek():
+                return rule
+
+    def match_pattern(self, node, rule):
+        if not rule:
+            return 0
+
+        res = rule.pattern.match(node.spelling)
+        if not res:
+            self.notify_error(node, rule.pattern_str)
+            return 1
+        return 0
 
     """ Returns True is node belongs to the file being validated and not an include file """
     def is_local(self, node, filename):
@@ -217,14 +250,10 @@ class Validator(object):
             return True
         return False
 
-    """ Returns true if pattern does not match the c/c++ construct """
-    def is_invalid(self, node):
-        return not self._rule_db[node.kind].match(node.spelling)
-
-    def notify_error(self, node):
+    def notify_error(self, node, pattern_str):
         fmt = '{}:{}:{}: "{}" does not match "{}" associated with {}\n'
         msg = fmt.format(node.location.file.name, node.location.line, node.location.column,
-                         node.displayname, self._rule_db[node.kind].pattern,
+                         node.displayname, pattern_str,
                          node.kind.name.lower())
         sys.stderr.write(msg)
 
@@ -243,7 +272,7 @@ if __name__ == "__main__":
     rules_db = RulesDb(op._style_file, op._db_dir)
 
     """ Check the source code against the configured rules """
-    v = Validator(rules_db._rule_db, rules_db._compile_db)
+    v = Validator(rules_db)
     while op.has_next_file():
         filename = op.next_file()
         if filename is not None:
