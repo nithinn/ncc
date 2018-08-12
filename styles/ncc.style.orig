@@ -1,0 +1,5 @@
+struct_decl: '^.*$'
+union_decl: '^.*$'
+class_decl: '^C.*$'
+enum_decl: '^.*$'
+field_decl: '^m_.*$'

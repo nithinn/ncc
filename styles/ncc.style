@@ -1,0 +1,5 @@
+StructName: '^.*$'
+UnionName: '^.*$'
+ClassName: '^C.*$'
+EnumName: '^.*$'
+ClassMemberVariable: '^m_.*$'
