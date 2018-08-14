@@ -7,6 +7,7 @@ import yaml
 import re
 import sys
 import difflib
+import os
 from clang.cindex import Index
 from clang.cindex import CompilationDatabase
 from clang.cindex import CursorKind
@@ -83,9 +84,7 @@ class Report(object):
 class Options:
     def __init__(self):
         self.args = None
-        self._file_index = -1
         self._style_file = 'ncc.style'
-        self._has_files = True
         self._db_dir = None
 
         self.parser = argparse.ArgumentParser(
@@ -125,16 +124,9 @@ class Options:
                 r = yaml.safe_load(stylefile)
                 pp.pprint(r)
 
-    def has_next_file(self):
-        return self._has_files
-
     def next_file(self):
-        self._file_index += 1
-        if self._file_index < len(self.args.path):
-            return self.args.path[self._file_index]
-        else:
-            self._has_files = False
-            return None
+        for filename in self.args.path:
+            yield filename
 
 
 class RulesDb(object):
@@ -273,7 +265,26 @@ if __name__ == "__main__":
 
     """ Check the source code against the configured rules """
     v = Validator(rules_db)
-    while op.has_next_file():
-        filename = op.next_file()
-        if filename is not None:
+    for filename in op.next_file():
+        if not os.path.exists(filename):
+            sys.stderr.write("File '{}' does not exist\n".format(filename))
+        elif os.path.isfile(filename):
+            print("Validating {}".format(filename))
             v.validate(filename)
+        elif os.path.isdir(filename):
+            if op.args.recurse:
+                # Get all files recursively and validate
+                print("Recursing directory {}".format(filename))
+                for (root, subdirs, subfiles) in os.walk(filename):
+                    for subfile in subfiles:
+                        path = root + '/' + subfile
+                        print("Validating {}".format(path))
+                        v.validate(path)
+            else:
+                # Validate all the files in the directory
+                print("Getting all files in directory {}".format(filename))
+                for subfile in os.listdir(filename):
+                    path = filename + '/' + subfile
+                    if os.path.isfile(path):
+                        print("Validating {}".format(path))
+                        v.validate(path)
