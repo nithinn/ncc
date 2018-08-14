@@ -48,6 +48,10 @@ user_kind_map["StructMemberVariable"] = Rule("field_decl",
                                              CursorKind.STRUCT_DECL,
                                              "Member variable declartion in a struct ")
 
+user_kind_map["UnionMemberVariable"] = Rule("field_decl",
+                                            CursorKind.UNION_DECL,
+                                            "Member variable declartion in a union ")
+
 # Clang cursor kind to ncc Defined cursor map
 cursor_kind_map = {}
 cursor_kind_map["struct_decl"] = ["StructName"]
@@ -88,23 +92,25 @@ class Options:
         self._db_dir = None
 
         self.parser = argparse.ArgumentParser(
-            prog="ccheckstyle.py",
-            description="ccheckstyle is a development tool to help programmers "
-            "write C code that adheres to a coding standard. It automates the "
+            prog="ncc.py",
+            description="ncc is a development tool to help programmers "
+            "write C/C++ code that adheres to a some naming conventions. It automates the "
             "process of checking C code to spare humans of this boring "
             "(but important) task. This makes it ideal for projects that want "
             "to enforce a coding standard.")
 
-        self.parser.add_argument("--recurse", action='store_true', dest="recurse",
+        self.parser.add_argument('-r', '--recurse', action='store_true', dest="recurse",
                                  help="Read all files under each directory, recursively")
 
-        self.parser.add_argument("--style", dest="style_file",
-                                 help="Read rules from the specified file")
+        self.parser.add_argument('-s', '--style', dest="style_file",
+                                 help="Read rules from the specified file. If the user does not"
+                                 "provide a style file ncc will use ncc.style file from the"
+                                 "present working directory.")
 
-        self.parser.add_argument('--dbdir', dest='cdbdir', help="Build path is used to "
+        self.parser.add_argument('-b', '--dbdir', dest='cdbdir', help="Build path is used to "
                                  "read a `compile_commands.json` compile command database")
 
-        self.parser.add_argument('--dump', dest='dump', help="Build path is used to "
+        self.parser.add_argument('-d', '--dump', dest='dump', help="Build path is used to "
                                  "read a `compile_commands.json` compile command database")
 
         self.parser.add_argument("path", metavar="FILE", nargs="+", type=str,
@@ -118,6 +124,10 @@ class Options:
 
         if self.args.style_file:
             self._style_file = self.args.style_file
+
+        if not os.path.exists(self._style_file):
+            sys.stderr.write("Style file '{}' not found!\n".format(self._style_file))
+            sys.exit(1)
 
         if self.args.dump:
             with open(self._style_file) as stylefile:
@@ -282,7 +292,6 @@ if __name__ == "__main__":
                         v.validate(path)
             else:
                 # Validate all the files in the directory
-                print("Getting all files in directory {}".format(filename))
                 for subfile in os.listdir(filename):
                     path = filename + '/' + subfile
                     if os.path.isfile(path):
