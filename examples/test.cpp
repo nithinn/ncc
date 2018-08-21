@@ -5,6 +5,14 @@ struct A
     int a;
 };
 
+typedef A aTypeDef;
+
+typedef struct C
+{
+    int a;
+    int m_b;
+} ccc;
+
 class B
 {
 public:

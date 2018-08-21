@@ -52,13 +52,38 @@ user_kind_map["UnionMemberVariable"] = Rule("field_decl",
                                             CursorKind.UNION_DECL,
                                             "Member variable declartion in a union ")
 
+user_kind_map["EnumConstantName"] = Rule("enum_constant_decl",
+                                         "Enum constant name ")
+
+user_kind_map["FunctionName"] = Rule("function_decl",
+                                     "Function name ")
+
+user_kind_map["VariableName"] = Rule("var_decl",
+                                     "Variable name ")
+
+user_kind_map["ParameterName"] = Rule("parm_decl",
+                                      "Parameter name ")
+
+user_kind_map["TypedefName"] = Rule("typedef_decl",
+                                    "Typedef name ")
+
+user_kind_map["CppMethod"] = Rule("cxx_method",
+                                  "Cpp Method name ")
+
 # Clang cursor kind to ncc Defined cursor map
 cursor_kind_map = {}
 cursor_kind_map["struct_decl"] = ["StructName"]
 cursor_kind_map["class_decl"] = ["ClassName"]
 cursor_kind_map["enum_decl"] = ["EnumName"]
 cursor_kind_map["union_decl"] = ["UnionName"]
-cursor_kind_map["field_decl"] = ["ClassMemberVariable", "StructMemberVariable"]
+cursor_kind_map["field_decl"] = ["ClassMemberVariable", "StructMemberVariable",
+                                 "UnionMemberVariable"]
+cursor_kind_map["enum_constant_decl"] = ["EnumConstantName"]
+cursor_kind_map["function_decl"] = ["FunctionName"]
+cursor_kind_map["var_decl"] = ["VariableName"]
+cursor_kind_map["parm_decl"] = ["ParameterName"]
+cursor_kind_map["typedef_decl"] = ["TypedefName"]
+cursor_kind_map["cxx_method"] = ["CppMethod"]
 
 SpecialKind = {CursorKind.STRUCT_DECL: 1, CursorKind.CLASS_DECL: 1}
 
