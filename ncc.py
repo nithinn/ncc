@@ -70,6 +70,9 @@ user_kind_map["TypedefName"] = Rule("typedef_decl",
 user_kind_map["CppMethod"] = Rule("cxx_method",
                                   "Cpp Method name ")
 
+user_kind_map["Namespace"] = Rule("namespace",
+                                  "Namespace name ")
+
 # Clang cursor kind to ncc Defined cursor map
 cursor_kind_map = {}
 cursor_kind_map["struct_decl"] = ["StructName"]
@@ -84,6 +87,7 @@ cursor_kind_map["var_decl"] = ["VariableName"]
 cursor_kind_map["parm_decl"] = ["ParameterName"]
 cursor_kind_map["typedef_decl"] = ["TypedefName"]
 cursor_kind_map["cxx_method"] = ["CppMethod"]
+cursor_kind_map["namespace"] = ["Namespace"]
 
 SpecialKind = {CursorKind.STRUCT_DECL: 1, CursorKind.CLASS_DECL: 1}
 
