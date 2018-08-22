@@ -14,8 +14,10 @@ from clang.cindex import CursorKind
 
 
 class Rule(object):
-    def __init__(self, clang_kind_str, parent_kind=None, help="", pattern_str='^.*$'):
+    def __init__(self, clang_kind_str, user_kind_str, parent_kind=None, help="",
+                 pattern_str='^.*$'):
         self.clang_kind_str = clang_kind_str
+        self.user_kind_str = user_kind_str
         self.parent_kind = parent_kind
         self.help = help
         self.pattern_str = pattern_str
@@ -25,52 +27,66 @@ class Rule(object):
 user_kind_map = {}
 
 user_kind_map["StructName"] = Rule("struct_decl",
+                                   "StructName",
                                    "Structure delcaration name, for e.g. in 'struct MyStruct' "
                                    "MyStruct is the StructName")
 
 user_kind_map["UnionName"] = Rule("union_decl",
+                                  "UnionName",
                                   "Union delcaration name, for e.g. in 'union MyUnion' MyUnion "
                                   "is the UnionName")
 
 user_kind_map["ClassName"] = Rule("class_decl",
+                                  "ClassName",
                                   "Class delcaration name, "
                                   "for e.g. in 'class MyClass' MyClass is the ClassName")
 
 user_kind_map["EnumName"] = Rule("enum_decl",
+                                 "EnumName",
                                  "Enum delcaration name, "
                                  "for e.g. in 'enum MyEnum' MyEnum is the EnumName")
 
 user_kind_map["ClassMemberVariable"] = Rule("field_decl",
+                                            "ClassMemberVariable",
                                             CursorKind.CLASS_DECL,
                                             "Member variable declartion in a class ")
 
 user_kind_map["StructMemberVariable"] = Rule("field_decl",
+                                             "StructMemberVariable",
                                              CursorKind.STRUCT_DECL,
                                              "Member variable declartion in a struct ")
 
 user_kind_map["UnionMemberVariable"] = Rule("field_decl",
+                                            "UnionMemberVariable",
                                             CursorKind.UNION_DECL,
                                             "Member variable declartion in a union ")
 
 user_kind_map["EnumConstantName"] = Rule("enum_constant_decl",
+                                         "EnumConstantName",
                                          "Enum constant name ")
 
 user_kind_map["FunctionName"] = Rule("function_decl",
+                                     "FunctionName",
                                      "Function name ")
 
 user_kind_map["VariableName"] = Rule("var_decl",
+                                     "VariableName",
                                      "Variable name ")
 
 user_kind_map["ParameterName"] = Rule("parm_decl",
+                                      "ParameterName",
                                       "Parameter name ")
 
 user_kind_map["TypedefName"] = Rule("typedef_decl",
+                                    "TypedefName",
                                     "Typedef name ")
 
 user_kind_map["CppMethod"] = Rule("cxx_method",
+                                  "CppMethod",
                                   "Cpp Method name ")
 
 user_kind_map["Namespace"] = Rule("namespace",
+                                  "Namespace",
                                   "Namespace name ")
 
 # Clang cursor kind to ncc Defined cursor map
@@ -92,7 +108,7 @@ cursor_kind_map["namespace"] = ["Namespace"]
 SpecialKind = {CursorKind.STRUCT_DECL: 1, CursorKind.CLASS_DECL: 1}
 
 
-class KindStack(object):
+class AstNodeStack(object):
     def __init__(self):
         self.stack = []
 
@@ -235,24 +251,24 @@ class Validator(object):
         unit = index.parse(filename, args=commands)
         cursor = unit.cursor
 
-        k_stack = KindStack()
-        return self.check(cursor, k_stack, filename)
+        node_stack = AstNodeStack()
+        return self.check(cursor, node_stack, filename)
 
-    def check(self, node, k_stack, filename):
+    def check(self, node, node_stack, filename):
         errors = 0
         for child in node.get_children():
             if self.is_local(child, filename):
-                errors += self.match_pattern(child, self.get_rule(child, k_stack))
+                errors += self.match_pattern(child, self.get_rule(child, node_stack))
                 if child.kind in SpecialKind:
-                    k_stack.push(child.kind)
-                    errors += self.check(child, k_stack, filename)
-                    k_stack.pop()
+                    node_stack.push(child.kind)
+                    errors += self.check(child, node_stack, filename)
+                    node_stack.pop()
                 else:
-                    errors += self.check(child, k_stack, filename)
+                    errors += self.check(child, node_stack, filename)
 
         return errors
 
-    def get_rule(self, node, k_stack):
+    def get_rule(self, node, node_stack):
         if not self.rule_db.is_rule_enabled(node.kind):
             return None
 
@@ -262,7 +278,7 @@ class Validator(object):
 
         for kind in user_kinds:
             rule = self.rule_db.get_rule(kind)
-            if rule.parent_kind == k_stack.peek():
+            if rule.parent_kind == node_stack.peek():
                 return rule
 
     def match_pattern(self, node, rule):
@@ -271,7 +287,7 @@ class Validator(object):
 
         res = rule.pattern.match(node.spelling)
         if not res:
-            self.notify_error(node, rule.pattern_str)
+            self.notify_error(node, rule)
             return 1
         return 0
 
@@ -281,11 +297,11 @@ class Validator(object):
             return True
         return False
 
-    def notify_error(self, node, pattern_str):
+    def notify_error(self, node, rule):
         fmt = '{}:{}:{}: "{}" does not match "{}" associated with {}\n'
         msg = fmt.format(node.location.file.name, node.location.line, node.location.column,
-                         node.displayname, pattern_str,
-                         node.kind.name.lower())
+                         node.displayname, rule.pattern_str,
+                         rule.user_kind_str)
         sys.stderr.write(msg)
 
 
