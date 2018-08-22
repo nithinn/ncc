@@ -1,5 +1,11 @@
 ## ncc
-C/C++ Naming convention checker
+
+C/C++ Naming convention checker (ncc)
+
+ncc is a development tool to help programmers write C/C++ code that adheres to
+a some naming conventions. It automates the process of checking C/C++ code to
+spare humans of this boring (but important) task. This makes it ideal for
+projects that want to enforce a coding standard.
 
 ## Status
 Work In Progress
@@ -12,9 +18,16 @@ Work In Progress
 
 ## Usage
 
-For standalone files, with default compiler invocation:
+    ncc.py [-h] [-r] [-s STYLE_FILE] [-b CDBDIR] [-d DUMP] FILE [FILE ...]
 
-    cncc --style=styles/ncc.style examples/test.cpp
+For standalone files:
+    ncc.py --style=styles/ncc.style examples/test.cpp
+
+For recursing through a directory structure:
+    ncc.py --style=styles/ncc.style --recurse examples
+
+For detailed description of all options:
+    ncc.py --help
 
 ## Style Defintion
 
