@@ -1,7 +1,7 @@
-# ncc
+## ncc
 C/C++ Naming convention checker
 
-# Status
+## Status
 Work In Progress
 
 ## Requirements
