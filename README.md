@@ -21,12 +21,15 @@ Work In Progress
     ncc.py [-h] [-r] [-s STYLE_FILE] [-b CDBDIR] [-d DUMP] FILE [FILE ...]
 
 For standalone files:
+
     ncc.py --style=styles/ncc.style examples/test.cpp
 
 For recursing through a directory structure:
+
     ncc.py --style=styles/ncc.style --recurse examples
 
 For detailed description of all options:
+
     ncc.py --help
 
 ## Style Defintion
