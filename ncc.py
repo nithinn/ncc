@@ -89,6 +89,34 @@ user_kind_map["Namespace"] = Rule("namespace",
                                   "Namespace",
                                   "Namespace name ")
 
+user_kind_map["ConversionFunction"] = Rule("conversion_function",
+                                           "ConversionFunction",
+                                           "Conversion function ")
+
+user_kind_map["TemplateTypeParameter"] = Rule("template_type_parameter",
+                                              "TemplateTypeParameter",
+                                              "Template type parameter name ")
+
+user_kind_map["TemplateNonTypeParameter"] = Rule("template_non_type_parameter",
+                                                 "TemplateNonTypeParameter",
+                                                 "Template non type parameter name ")
+
+user_kind_map["TemplateTemplateParameter"] = Rule("template_template_parameter",
+                                                  "TemplateTemplateParameter",
+                                                  "Template Template parameter name ")
+
+user_kind_map["FunctionTemplate"] = Rule("function_template",
+                                         "FunctionTemplate",
+                                         "Function Template ")
+
+user_kind_map["ClassTemplate"] = Rule("class_template",
+                                      "ClassTemplate",
+                                      "Class Template ")
+
+user_kind_map["ClassTemplatePartialSpecialization"] = Rule("class_template_partial_specialization",
+                                                           "ClassTemplatePartialSpecialization",
+                                                           "Class Template Partial Specialization")
+
 # Clang cursor kind to ncc Defined cursor map
 cursor_kind_map = {}
 cursor_kind_map["struct_decl"] = ["StructName"]
@@ -104,6 +132,13 @@ cursor_kind_map["parm_decl"] = ["ParameterName"]
 cursor_kind_map["typedef_decl"] = ["TypedefName"]
 cursor_kind_map["cxx_method"] = ["CppMethod"]
 cursor_kind_map["namespace"] = ["Namespace"]
+cursor_kind_map["conversion_function"] = ["ConversionFunction"]
+cursor_kind_map["template_type_parameter"] = ["TemplateTypeParameter"]
+cursor_kind_map["template_non_type_parameter"] = ["TemplateNonTypeParameter"]
+cursor_kind_map["template_template_parameter"] = ["TemplateTemplateParameter"]
+cursor_kind_map["function_template"] = ["FunctionTemplate"]
+cursor_kind_map["class_template"] = ["ClassTemplate"]
+cursor_kind_map["class_template_partial_specialization"] = ["ClassTemplatePartialSpecialization"]
 
 SpecialKind = {CursorKind.STRUCT_DECL: 1, CursorKind.CLASS_DECL: 1}
 
@@ -157,6 +192,9 @@ class Options:
 
         self.parser.add_argument('-d', '--dump', dest='dump', help="Build path is used to "
                                  "read a `compile_commands.json` compile command database")
+
+        self.parser.add_argument('-o', '--output', dest='output', help="output file name where"
+                                 "naming convenction vialoations will be stored")
 
         self.parser.add_argument("path", metavar="FILE", nargs="+", type=str,
                                  help="Path of file or directory")
