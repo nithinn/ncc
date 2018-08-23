@@ -20,10 +20,9 @@ SpecialKind = {CursorKind.STRUCT_DECL: 1, CursorKind.CLASS_DECL: 1}
 
 
 class Rule(object):
-    def __init__(self, clang_kind_str, user_kind_str, parent_kind=None,
+    def __init__(self, clang_kind_str, parent_kind=None,
                  pattern_str='^.*$'):
         self.clang_kind_str = clang_kind_str
-        self.user_kind_str = user_kind_str
         self.parent_kind = parent_kind
         self.pattern_str = pattern_str
         self.pattern = re.compile(pattern_str)
@@ -31,72 +30,51 @@ class Rule(object):
 
 default_rules_db = {}
 
-default_rules_db["StructName"] = Rule("struct_decl",
-                                      "StructName")
+default_rules_db["StructName"] = Rule("struct_decl")
 
-default_rules_db["UnionName"] = Rule("union_decl",
-                                     "UnionName")
+default_rules_db["UnionName"] = Rule("union_decl")
 
-default_rules_db["ClassName"] = Rule("class_decl",
-                                     "ClassName")
+default_rules_db["ClassName"] = Rule("class_decl")
 
-default_rules_db["EnumName"] = Rule("enum_decl",
-                                    "EnumName")
+default_rules_db["EnumName"] = Rule("enum_decl")
 
 default_rules_db["ClassMemberVariable"] = Rule("field_decl",
-                                               "ClassMemberVariable",
                                                CursorKind.CLASS_DECL)
 
 default_rules_db["StructMemberVariable"] = Rule("field_decl",
-                                                "StructMemberVariable",
                                                 CursorKind.STRUCT_DECL)
 
 default_rules_db["UnionMemberVariable"] = Rule("field_decl",
-                                               "UnionMemberVariable",
                                                CursorKind.UNION_DECL)
 
-default_rules_db["EnumConstantName"] = Rule("enum_constant_decl",
-                                            "EnumConstantName")
+default_rules_db["EnumConstantName"] = Rule("enum_constant_decl")
 
-default_rules_db["FunctionName"] = Rule("function_decl",
-                                        "FunctionName")
+default_rules_db["FunctionName"] = Rule("function_decl")
 
-default_rules_db["VariableName"] = Rule("var_decl",
-                                        "VariableName")
+default_rules_db["VariableName"] = Rule("var_decl")
 
-default_rules_db["ParameterName"] = Rule("parm_decl",
-                                         "ParameterName")
+default_rules_db["ParameterName"] = Rule("parm_decl")
 
-default_rules_db["TypedefName"] = Rule("typedef_decl",
-                                       "TypedefName")
+default_rules_db["TypedefName"] = Rule("typedef_decl")
 
-default_rules_db["CppMethod"] = Rule("cxx_method",
-                                     "CppMethod")
+default_rules_db["CppMethod"] = Rule("cxx_method")
 
-default_rules_db["Namespace"] = Rule("namespace",
-                                     "Namespace")
+default_rules_db["Namespace"] = Rule("namespace")
 
-default_rules_db["ConversionFunction"] = Rule("conversion_function",
-                                              "ConversionFunction")
+default_rules_db["ConversionFunction"] = Rule("conversion_function")
 
-default_rules_db["TemplateTypeParameter"] = Rule("template_type_parameter",
-                                                 "TemplateTypeParameter")
+default_rules_db["TemplateTypeParameter"] = Rule("template_type_parameter")
 
-default_rules_db["TemplateNonTypeParameter"] = Rule("template_non_type_parameter",
-                                                    "TemplateNonTypeParameter")
+default_rules_db["TemplateNonTypeParameter"] = Rule("template_non_type_parameter")
 
-default_rules_db["TemplateTemplateParameter"] = Rule("template_template_parameter",
-                                                     "TemplateTemplateParameter")
+default_rules_db["TemplateTemplateParameter"] = Rule("template_template_parameter")
 
-default_rules_db["FunctionTemplate"] = Rule("function_template",
-                                            "FunctionTemplate")
+default_rules_db["FunctionTemplate"] = Rule("function_template")
 
-default_rules_db["ClassTemplate"] = Rule("class_template",
-                                         "ClassTemplate")
+default_rules_db["ClassTemplate"] = Rule("class_template")
 
 default_rules_db["ClassTemplatePartialSpecialization"] = Rule(
-    "class_template_partial_specialization",
-    "ClassTemplatePartialSpecialization")
+    "class_template_partial_specialization")
 
 # default_rules_db["NamespaceAlias"] = Rule()
 # default_rules_db["UsingDirective"] = Rule()
@@ -352,8 +330,18 @@ class Validator(object):
         errors = 0
         for child in node.get_children():
             if self.is_local(child, filename):
-                errors += self.match_pattern(child, self.get_rule(child, node_stack))
+
+                # get the node's rule and match the pattern. Report and error if pattern
+                # matching fails
+                rule, user_kind = self.get_rule(child, node_stack)
+                if rule and (not rule.pattern.match(child.spelling)):
+                    self.notify_error(child, rule, user_kind)
+                    errors += 1
+
                 if child.kind in SpecialKind:
+                    # Members struct, class, and unions must be treated differently. So whenever
+                    # we encounter these types we push it into a stack. Once all its children are
+                    # validated pop it out of the stack
                     node_stack.push(child.kind)
                     errors += self.check(child, node_stack, filename)
                     node_stack.pop()
@@ -364,26 +352,15 @@ class Validator(object):
 
     def get_rule(self, node, node_stack):
         if not self.rule_db.is_rule_enabled(node.kind):
-            return None
+            return None, None
 
         user_kinds = self.rule_db.get_user_kinds(node.kind)
-        if len(user_kinds) == 1:
-            return self.rule_db.get_rule(user_kinds[0])
-
         for kind in user_kinds:
             rule = self.rule_db.get_rule(kind)
             if rule.parent_kind == node_stack.peek():
-                return rule
+                return rule, kind
 
-    def match_pattern(self, node, rule):
-        if not rule:
-            return 0
-
-        res = rule.pattern.match(node.spelling)
-        if not res:
-            self.notify_error(node, rule)
-            return 1
-        return 0
+        return self.rule_db.get_rule(user_kinds[0]), user_kinds[0]
 
     """ Returns True is node belongs to the file being validated and not an include file """
     def is_local(self, node, filename):
@@ -391,11 +368,10 @@ class Validator(object):
             return True
         return False
 
-    def notify_error(self, node, rule):
+    def notify_error(self, node, rule, user_kind):
         fmt = '{}:{}:{}: "{}" does not match "{}" associated with {}\n'
         msg = fmt.format(node.location.file.name, node.location.line, node.location.column,
-                         node.displayname, rule.pattern_str,
-                         rule.user_kind_str)
+                         node.displayname, rule.pattern_str, user_kind)
         sys.stderr.write(msg)
 
 
