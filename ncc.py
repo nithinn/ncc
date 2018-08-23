@@ -8,139 +8,190 @@ import re
 import sys
 import difflib
 import os
+from collections import defaultdict
 from clang.cindex import Index
 from clang.cindex import CompilationDatabase
 from clang.cindex import CursorKind
 
 
+# Clang cursor kind to ncc Defined cursor map
+cursor_kind_map = defaultdict(list)
+SpecialKind = {CursorKind.STRUCT_DECL: 1, CursorKind.CLASS_DECL: 1}
+
+
 class Rule(object):
-    def __init__(self, clang_kind_str, user_kind_str, parent_kind=None, help="",
+    def __init__(self, clang_kind_str, user_kind_str, parent_kind=None,
                  pattern_str='^.*$'):
         self.clang_kind_str = clang_kind_str
         self.user_kind_str = user_kind_str
         self.parent_kind = parent_kind
-        self.help = help
         self.pattern_str = pattern_str
         self.pattern = re.compile(pattern_str)
 
 
-user_kind_map = {}
+default_rules_db = {}
 
-user_kind_map["StructName"] = Rule("struct_decl",
-                                   "StructName",
-                                   "Structure delcaration name, for e.g. in 'struct MyStruct' "
-                                   "MyStruct is the StructName")
+default_rules_db["StructName"] = Rule("struct_decl",
+                                      "StructName")
 
-user_kind_map["UnionName"] = Rule("union_decl",
-                                  "UnionName",
-                                  "Union delcaration name, for e.g. in 'union MyUnion' MyUnion "
-                                  "is the UnionName")
+default_rules_db["UnionName"] = Rule("union_decl",
+                                     "UnionName")
 
-user_kind_map["ClassName"] = Rule("class_decl",
-                                  "ClassName",
-                                  "Class delcaration name, "
-                                  "for e.g. in 'class MyClass' MyClass is the ClassName")
+default_rules_db["ClassName"] = Rule("class_decl",
+                                     "ClassName")
 
-user_kind_map["EnumName"] = Rule("enum_decl",
-                                 "EnumName",
-                                 "Enum delcaration name, "
-                                 "for e.g. in 'enum MyEnum' MyEnum is the EnumName")
+default_rules_db["EnumName"] = Rule("enum_decl",
+                                    "EnumName")
 
-user_kind_map["ClassMemberVariable"] = Rule("field_decl",
-                                            "ClassMemberVariable",
-                                            CursorKind.CLASS_DECL,
-                                            "Member variable declartion in a class ")
+default_rules_db["ClassMemberVariable"] = Rule("field_decl",
+                                               "ClassMemberVariable",
+                                               CursorKind.CLASS_DECL)
 
-user_kind_map["StructMemberVariable"] = Rule("field_decl",
-                                             "StructMemberVariable",
-                                             CursorKind.STRUCT_DECL,
-                                             "Member variable declartion in a struct ")
+default_rules_db["StructMemberVariable"] = Rule("field_decl",
+                                                "StructMemberVariable",
+                                                CursorKind.STRUCT_DECL)
 
-user_kind_map["UnionMemberVariable"] = Rule("field_decl",
-                                            "UnionMemberVariable",
-                                            CursorKind.UNION_DECL,
-                                            "Member variable declartion in a union ")
+default_rules_db["UnionMemberVariable"] = Rule("field_decl",
+                                               "UnionMemberVariable",
+                                               CursorKind.UNION_DECL)
 
-user_kind_map["EnumConstantName"] = Rule("enum_constant_decl",
-                                         "EnumConstantName",
-                                         "Enum constant name ")
+default_rules_db["EnumConstantName"] = Rule("enum_constant_decl",
+                                            "EnumConstantName")
 
-user_kind_map["FunctionName"] = Rule("function_decl",
-                                     "FunctionName",
-                                     "Function name ")
+default_rules_db["FunctionName"] = Rule("function_decl",
+                                        "FunctionName")
 
-user_kind_map["VariableName"] = Rule("var_decl",
-                                     "VariableName",
-                                     "Variable name ")
+default_rules_db["VariableName"] = Rule("var_decl",
+                                        "VariableName")
 
-user_kind_map["ParameterName"] = Rule("parm_decl",
-                                      "ParameterName",
-                                      "Parameter name ")
+default_rules_db["ParameterName"] = Rule("parm_decl",
+                                         "ParameterName")
 
-user_kind_map["TypedefName"] = Rule("typedef_decl",
-                                    "TypedefName",
-                                    "Typedef name ")
+default_rules_db["TypedefName"] = Rule("typedef_decl",
+                                       "TypedefName")
 
-user_kind_map["CppMethod"] = Rule("cxx_method",
-                                  "CppMethod",
-                                  "Cpp Method name ")
+default_rules_db["CppMethod"] = Rule("cxx_method",
+                                     "CppMethod")
 
-user_kind_map["Namespace"] = Rule("namespace",
-                                  "Namespace",
-                                  "Namespace name ")
+default_rules_db["Namespace"] = Rule("namespace",
+                                     "Namespace")
 
-user_kind_map["ConversionFunction"] = Rule("conversion_function",
-                                           "ConversionFunction",
-                                           "Conversion function ")
+default_rules_db["ConversionFunction"] = Rule("conversion_function",
+                                              "ConversionFunction")
 
-user_kind_map["TemplateTypeParameter"] = Rule("template_type_parameter",
-                                              "TemplateTypeParameter",
-                                              "Template type parameter name ")
+default_rules_db["TemplateTypeParameter"] = Rule("template_type_parameter",
+                                                 "TemplateTypeParameter")
 
-user_kind_map["TemplateNonTypeParameter"] = Rule("template_non_type_parameter",
-                                                 "TemplateNonTypeParameter",
-                                                 "Template non type parameter name ")
+default_rules_db["TemplateNonTypeParameter"] = Rule("template_non_type_parameter",
+                                                    "TemplateNonTypeParameter")
 
-user_kind_map["TemplateTemplateParameter"] = Rule("template_template_parameter",
-                                                  "TemplateTemplateParameter",
-                                                  "Template Template parameter name ")
+default_rules_db["TemplateTemplateParameter"] = Rule("template_template_parameter",
+                                                     "TemplateTemplateParameter")
 
-user_kind_map["FunctionTemplate"] = Rule("function_template",
-                                         "FunctionTemplate",
-                                         "Function Template ")
+default_rules_db["FunctionTemplate"] = Rule("function_template",
+                                            "FunctionTemplate")
 
-user_kind_map["ClassTemplate"] = Rule("class_template",
-                                      "ClassTemplate",
-                                      "Class Template ")
+default_rules_db["ClassTemplate"] = Rule("class_template",
+                                         "ClassTemplate")
 
-user_kind_map["ClassTemplatePartialSpecialization"] = Rule("class_template_partial_specialization",
-                                                           "ClassTemplatePartialSpecialization",
-                                                           "Class Template Partial Specialization")
+default_rules_db["ClassTemplatePartialSpecialization"] = Rule(
+    "class_template_partial_specialization",
+    "ClassTemplatePartialSpecialization")
 
-# Clang cursor kind to ncc Defined cursor map
-cursor_kind_map = {}
-cursor_kind_map["struct_decl"] = ["StructName"]
-cursor_kind_map["class_decl"] = ["ClassName"]
-cursor_kind_map["enum_decl"] = ["EnumName"]
-cursor_kind_map["union_decl"] = ["UnionName"]
-cursor_kind_map["field_decl"] = ["ClassMemberVariable", "StructMemberVariable",
-                                 "UnionMemberVariable"]
-cursor_kind_map["enum_constant_decl"] = ["EnumConstantName"]
-cursor_kind_map["function_decl"] = ["FunctionName"]
-cursor_kind_map["var_decl"] = ["VariableName"]
-cursor_kind_map["parm_decl"] = ["ParameterName"]
-cursor_kind_map["typedef_decl"] = ["TypedefName"]
-cursor_kind_map["cxx_method"] = ["CppMethod"]
-cursor_kind_map["namespace"] = ["Namespace"]
-cursor_kind_map["conversion_function"] = ["ConversionFunction"]
-cursor_kind_map["template_type_parameter"] = ["TemplateTypeParameter"]
-cursor_kind_map["template_non_type_parameter"] = ["TemplateNonTypeParameter"]
-cursor_kind_map["template_template_parameter"] = ["TemplateTemplateParameter"]
-cursor_kind_map["function_template"] = ["FunctionTemplate"]
-cursor_kind_map["class_template"] = ["ClassTemplate"]
-cursor_kind_map["class_template_partial_specialization"] = ["ClassTemplatePartialSpecialization"]
-
-SpecialKind = {CursorKind.STRUCT_DECL: 1, CursorKind.CLASS_DECL: 1}
+# default_rules_db["NamespaceAlias"] = Rule()
+# default_rules_db["UsingDirective"] = Rule()
+# default_rules_db["UsingDeclaration"] = Rule()
+# default_rules_db["TypeAliasDecl"] = Rule()
+# default_rules_db["CxxAccessSpecDecl"] = Rule()
+# default_rules_db["TypeRef"] = Rule()
+# default_rules_db["CxxBaseSpecifier"] = Rule()
+# default_rules_db["TemplateRef"] = Rule()
+# default_rules_db["NamespaceRef"] = Rule()
+# default_rules_db["MemberRef"] = Rule()
+# default_rules_db["LabelRef"] = Rule()
+# default_rules_db["OverloadedDeclRef"] = Rule()
+# default_rules_db["VariableRef"] = Rule()
+# default_rules_db["InvalidFile"] = Rule()
+# default_rules_db["NoDeclFound"] = Rule()
+# default_rules_db["NotImplemented"] = Rule()
+# default_rules_db["InvalidCode"] = Rule()
+# default_rules_db["UnexposedExpr"] = Rule()
+# default_rules_db["DeclRefExpr"] = Rule()
+# default_rules_db["MemberRefExpr"] = Rule()
+# default_rules_db["CallExpr"] = Rule()
+# default_rules_db["BlockExpr"] = Rule()
+# default_rules_db["IntegerLiteral"] = Rule()
+# default_rules_db["FloatingLiteral"] = Rule()
+# default_rules_db["ImaginaryLiteral"] = Rule()
+# default_rules_db["StringLiteral"] = Rule()
+# default_rules_db["CharacterLiteral"] = Rule()
+# default_rules_db["ParenExpr"] = Rule()
+# default_rules_db["UnaryOperator"] = Rule()
+# default_rules_db["ArraySubscriptExpr"] = Rule()
+# default_rules_db["BinaryOperator"] = Rule()
+# default_rules_db["CompoundAssignmentOperator"] = Rule()
+# default_rules_db["ConditionalOperator"] = Rule()
+# default_rules_db["CstyleCastExpr"] = Rule()
+# default_rules_db["CompoundLiteralExpr"] = Rule()
+# default_rules_db["InitListExpr"] = Rule()
+# default_rules_db["AddrLabelExpr"] = Rule()
+# default_rules_db["Stmtexpr"] = Rule()
+# default_rules_db["GenericSelectionExpr"] = Rule()
+# default_rules_db["GnuNullExpr"] = Rule()
+# default_rules_db["CxxStaticCastExpr"] = Rule()
+# default_rules_db["CxxDynamicCastExpr"] = Rule()
+# default_rules_db["CxxReinterpretCastExpr"] = Rule()
+# default_rules_db["CxxConstCastExpr"] = Rule()
+# default_rules_db["CxxFunctionalCastExpr"] = Rule()
+# default_rules_db["CxxTypeidExpr"] = Rule()
+# default_rules_db["CxxBoolLiteralExpr"] = Rule()
+# default_rules_db["CxxNullPtrLiteralExpr"] = Rule()
+# default_rules_db["CxxThisExpr"] = Rule()
+# default_rules_db["CxxThrowExpr"] = Rule()
+# default_rules_db["CxxNewExpr"] = Rule()
+# default_rules_db["CxxDeleteExpr"] = Rule()
+# default_rules_db["CxxUnaryExpr"] = Rule()
+# default_rules_db["PackExpansionExpr"] = Rule()
+# default_rules_db["SizeOfPackExpr"] = Rule()
+# default_rules_db["LambdaExpr"] = Rule()
+# default_rules_db["ObjBoolLiteralExpr"] = Rule()
+# default_rules_db["ObjSelfExpr"] = Rule()
+# default_rules_db["UnexposedStmt"] = Rule()
+# default_rules_db["LabelStmt"] = Rule()
+# default_rules_db["CompoundStmt"] = Rule()
+# default_rules_db["CaseStmt"] = Rule()
+# default_rules_db["DefaultStmt"] = Rule()
+# default_rules_db["IfStmt"] = Rule()
+# default_rules_db["SwitchStmt"] = Rule()
+# default_rules_db["WhileStmt"] = Rule()
+# default_rules_db["DoStmt"] = Rule()
+# default_rules_db["ForStmt"] = Rule()
+# default_rules_db["GotoStmt"] = Rule()
+# default_rules_db["IndirectGotoStmt"] = Rule()
+# default_rules_db["ContinueStmt"] = Rule()
+# default_rules_db["BreakStmt"] = Rule()
+# default_rules_db["ReturnStmt"] = Rule()
+# default_rules_db["AsmStmt"] = Rule()
+# default_rules_db["CxxCatchStmt"] = Rule()
+# default_rules_db["CxxTryStmt"] = Rule()
+# default_rules_db["CxxForRangeStmt"] = Rule()
+# default_rules_db["MsAsmStmt"] = Rule()
+# default_rules_db["NullStmt"] = Rule()
+# default_rules_db["DeclStmt"] = Rule()
+# default_rules_db["TranslationUnit"] = Rule()
+# default_rules_db["UnexposedAttr"] = Rule()
+# default_rules_db["CxxFinalAttr"] = Rule()
+# default_rules_db["CxxOverrideAttr"] = Rule()
+# default_rules_db["AnnotateAttr"] = Rule()
+# default_rules_db["AsmLabelAttr"] = Rule()
+# default_rules_db["PackedAttr"] = Rule()
+# default_rules_db["PureAttr"] = Rule()
+# default_rules_db["ConstAttr"] = Rule()
+# default_rules_db["NoduplicateAttr"] = Rule()
+# default_rules_db["PreprocessingDirective"] = Rule()
+# default_rules_db["MacroDefinition"] = Rule()
+# default_rules_db["MacroInstantiation"] = Rule()
+# default_rules_db["InclusionDirective"] = Rule()
 
 
 class AstNodeStack(object):
@@ -234,6 +285,7 @@ class RulesDb(object):
             except Exception as e:
                 sys.exit(1)
 
+        self.build_cursor_kind_map()
         self.build_rules_db(style_file)
 
     def build_rules_db(self, style_file):
@@ -245,10 +297,10 @@ class RulesDb(object):
                 cursor_kinds = {kind.name.lower(): kind for kind in CursorKind.get_all_kinds()}
 
                 for (user_kind, pattern_str) in style_rules.items():
-                    clang_kind_str = user_kind_map[user_kind].clang_kind_str
+                    clang_kind_str = default_rules_db[user_kind].clang_kind_str
                     clang_kind = cursor_kinds[clang_kind_str]
                     if clang_kind:
-                        self.__rule_db[user_kind] = user_kind_map[user_kind]
+                        self.__rule_db[user_kind] = default_rules_db[user_kind]
                         self.__rule_db[user_kind].pattern_str = pattern_str
                         self.__rule_db[user_kind].pattern = re.compile(pattern_str)
                         self.__clang_db[clang_kind] = cursor_kind_map[clang_kind_str]
@@ -260,7 +312,11 @@ class RulesDb(object):
                     sys.stderr.write('Did you mean CursorKind: {}\n'.format(fixit[0]))
                 sys.exit(1)
         else:
-            self.__rule_db = user_kind_map
+            self.__rule_db = default_rules_db
+
+    def build_cursor_kind_map(self):
+        for key, value in default_rules_db.iteritems():
+            cursor_kind_map[value.clang_kind_str].append(key)
 
     def get_compile_commands(self, filename):
         if self.__compile_db:
