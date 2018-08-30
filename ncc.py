@@ -16,7 +16,8 @@ from clang.cindex import CursorKind
 
 # Clang cursor kind to ncc Defined cursor map
 cursor_kind_map = defaultdict(list)
-SpecialKind = {CursorKind.STRUCT_DECL: 1, CursorKind.CLASS_DECL: 1}
+special_kind = {CursorKind.STRUCT_DECL: 1, CursorKind.CLASS_DECL: 1}
+file_extensions = [".c", ".cpp", ".h", ".hpp"]
 
 
 class Rule(object):
@@ -201,6 +202,9 @@ class Options:
         self.parser.add_argument('-o', '--output', dest='output', help="output file name where"
                                  "naming convenction vialoations will be stored")
 
+        self.parser.add_argument('-x', '--extension', dest='extention', help="File extentions "
+                                 "that are applicable for naming convection validation")
+
         self.parser.add_argument("path", metavar="FILE", nargs="+", type=str,
                                  help="Path of file or directory")
 
@@ -314,7 +318,7 @@ class Validator(object):
                     self.notify_error(child, rule, user_kind)
                     errors += 1
 
-                if child.kind in SpecialKind:
+                if child.kind in special_kind:
                     # Members struct, class, and unions must be treated differently. So whenever
                     # we encounter these types we push it into a stack. Once all its children are
                     # validated pop it out of the stack
