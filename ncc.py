@@ -21,8 +21,7 @@ file_extensions = [".c", ".cpp", ".h", ".hpp"]
 
 
 class Rule(object):
-    def __init__(self, clang_kind_str, parent_kind=None,
-                 pattern_str='^.*$'):
+    def __init__(self, clang_kind_str, parent_kind=None, pattern_str='^.*$'):
         self.clang_kind_str = clang_kind_str
         self.parent_kind = parent_kind
         self.pattern_str = pattern_str
@@ -58,21 +57,21 @@ default_rules_db["UsingDirective"] = Rule("using_directive")
 default_rules_db["UsingDeclaration"] = Rule("using_declaration")
 default_rules_db["TypeAliasName"] = Rule("type_alias_decl")
 default_rules_db["ClassAccessSpecifier"] = Rule("cxx_access_spec_decl")
-default_rules_db["TypeRef"] = Rule("type_ref")
+default_rules_db["TypeReference"] = Rule("type_ref")
 default_rules_db["CxxBaseSpecifier"] = Rule("cxx_base_specifier")
-default_rules_db["TemplateRef"] = Rule("template_ref")
-default_rules_db["NamespaceRef"] = Rule("namespace_ref")
-default_rules_db["MemberRef"] = Rule("member_ref")
-default_rules_db["LabelRef"] = Rule("label_ref")
-default_rules_db["OverloadedDeclarationRef"] = Rule("overloaded_decl_ref")
-default_rules_db["VariableRef"] = Rule("variable_ref")
+default_rules_db["TemplateReference"] = Rule("template_ref")
+default_rules_db["NamespaceReference"] = Rule("namespace_ref")
+default_rules_db["MemberReference"] = Rule("member_ref")
+default_rules_db["LabelReference"] = Rule("label_ref")
+default_rules_db["OverloadedDeclarationReference"] = Rule("overloaded_decl_ref")
+default_rules_db["VariableReference"] = Rule("variable_ref")
 default_rules_db["InvalidFile"] = Rule("invalid_file")
 default_rules_db["NoDeclarationFound"] = Rule("no_decl_found")
 default_rules_db["NotImplemented"] = Rule("not_implemented")
 default_rules_db["InvalidCode"] = Rule("invalid_code")
 default_rules_db["UnexposedExpression"] = Rule("unexposed_expr")
-default_rules_db["DeclarationRefExpression"] = Rule("decl_ref_expr")
-default_rules_db["MemberRefExpression"] = Rule("member_ref_expr")
+default_rules_db["DeclarationReferenceExpression"] = Rule("decl_ref_expr")
+default_rules_db["MemberReferenceExpression"] = Rule("member_ref_expr")
 default_rules_db["CallExpression"] = Rule("call_expr")
 default_rules_db["BlockExpression"] = Rule("block_expr")
 default_rules_db["IntegerLiteral"] = Rule("integer_literal")
@@ -250,10 +249,10 @@ class RulesDb(object):
             with open(style_file) as stylefile:
                 style_rules = yaml.safe_load(stylefile)
 
-            try:
-                cursor_kinds = {kind.name.lower(): kind for kind in CursorKind.get_all_kinds()}
+            cursor_kinds = {kind.name.lower(): kind for kind in CursorKind.get_all_kinds()}
 
-                for (user_kind, pattern_str) in style_rules.items():
+            for (user_kind, pattern_str) in style_rules.items():
+                try:
                     clang_kind_str = default_rules_db[user_kind].clang_kind_str
                     clang_kind = cursor_kinds[clang_kind_str]
                     if clang_kind:
@@ -262,12 +261,17 @@ class RulesDb(object):
                         self.__rule_db[user_kind].pattern = re.compile(pattern_str)
                         self.__clang_db[clang_kind] = cursor_kind_map[clang_kind_str]
 
-            except KeyError as e:
-                sys.stderr.write('{} is not a valid C/C++ construct name\n'.format(e.message))
-                fixit = difflib.get_close_matches(e.message, cursor_kinds.keys(), n=1, cutoff=0.8)
-                if fixit:
-                    sys.stderr.write('Did you mean CursorKind: {}\n'.format(fixit[0]))
-                sys.exit(1)
+                except KeyError as e:
+                    sys.stderr.write('{} is not a valid C/C++ construct name\n'.format(e.message))
+                    fixit = difflib.get_close_matches(e.message, default_rules_db.keys(),
+                                                      n=1, cutoff=0.8)
+                    if fixit:
+                        sys.stderr.write('Did you mean CursorKind: {}\n'.format(fixit[0]))
+                    sys.exit(1)
+                except re.error as e:
+                    sys.stderr.write('"{}" pattern {} has {} \n'.
+                                     format(user_kind, pattern_str, e.message))
+                    sys.exit(1)
         else:
             self.__rule_db = default_rules_db
 
