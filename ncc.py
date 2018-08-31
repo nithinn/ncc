@@ -64,85 +64,85 @@ default_rules_db["TemplateRef"] = Rule("template_ref")
 default_rules_db["NamespaceRef"] = Rule("namespace_ref")
 default_rules_db["MemberRef"] = Rule("member_ref")
 default_rules_db["LabelRef"] = Rule("label_ref")
-default_rules_db["OverloadedDeclRef"] = Rule("overloaded_decl_ref")
+default_rules_db["OverloadedDeclarationRef"] = Rule("overloaded_decl_ref")
 default_rules_db["VariableRef"] = Rule("variable_ref")
 default_rules_db["InvalidFile"] = Rule("invalid_file")
-default_rules_db["NoDeclFound"] = Rule("no_decl_found")
+default_rules_db["NoDeclarationFound"] = Rule("no_decl_found")
 default_rules_db["NotImplemented"] = Rule("not_implemented")
 default_rules_db["InvalidCode"] = Rule("invalid_code")
-default_rules_db["UnexposedExpr"] = Rule("unexposed_expr")
-default_rules_db["DeclRefExpr"] = Rule("decl_ref_expr")
-default_rules_db["MemberRefExpr"] = Rule("member_ref_expr")
-default_rules_db["CallExpr"] = Rule("call_expr")
-default_rules_db["BlockExpr"] = Rule("block_expr")
+default_rules_db["UnexposedExpression"] = Rule("unexposed_expr")
+default_rules_db["DeclarationRefExpression"] = Rule("decl_ref_expr")
+default_rules_db["MemberRefExpression"] = Rule("member_ref_expr")
+default_rules_db["CallExpression"] = Rule("call_expr")
+default_rules_db["BlockExpression"] = Rule("block_expr")
 default_rules_db["IntegerLiteral"] = Rule("integer_literal")
 default_rules_db["FloatingLiteral"] = Rule("floating_literal")
 default_rules_db["ImaginaryLiteral"] = Rule("imaginary_literal")
 default_rules_db["StringLiteral"] = Rule("string_literal")
 default_rules_db["CharacterLiteral"] = Rule("character_literal")
-default_rules_db["ParenExpr"] = Rule("paren_expr")
+default_rules_db["ParenExpression"] = Rule("paren_expr")
 default_rules_db["UnaryOperator"] = Rule("unary_operator")
-default_rules_db["ArraySubscriptExpr"] = Rule("array_subscript_expr")
+default_rules_db["ArraySubscriptExpression"] = Rule("array_subscript_expr")
 default_rules_db["BinaryOperator"] = Rule("binary_operator")
 default_rules_db["CompoundAssignmentOperator"] = Rule("compound_assignment_operator")
 default_rules_db["ConditionalOperator"] = Rule("conditional_operator")
-default_rules_db["CstyleCastExpr"] = Rule("cstyle_cast_expr")
-default_rules_db["CompoundLiteralExpr"] = Rule("compound_literal_expr")
-default_rules_db["InitListExpr"] = Rule("init_list_expr")
-default_rules_db["AddrLabelExpr"] = Rule("addr_label_expr")
-default_rules_db["Stmtexpr"] = Rule("stmtexpr")
-default_rules_db["GenericSelectionExpr"] = Rule("generic_selection_expr")
-default_rules_db["GnuNullExpr"] = Rule("gnu_null_expr")
-default_rules_db["CxxStaticCastExpr"] = Rule("cxx_static_cast_expr")
-default_rules_db["CxxDynamicCastExpr"] = Rule("cxx_dynamic_cast_expr")
-default_rules_db["CxxReinterpretCastExpr"] = Rule("cxx_reinterpret_cast_expr")
-default_rules_db["CxxConstCastExpr"] = Rule("cxx_const_cast_expr")
-default_rules_db["CxxFunctionalCastExpr"] = Rule("cxx_functional_cast_expr")
-default_rules_db["CxxTypeidExpr"] = Rule("cxx_typeid_expr")
-default_rules_db["CxxBoolLiteralExpr"] = Rule("cxx_bool_literal_expr")
-default_rules_db["CxxNullPtrLiteralExpr"] = Rule("cxx_null_ptr_literal_expr")
-default_rules_db["CxxThisExpr"] = Rule("cxx_this_expr")
-default_rules_db["CxxThrowExpr"] = Rule("cxx_throw_expr")
-default_rules_db["CxxNewExpr"] = Rule("cxx_new_expr")
-default_rules_db["CxxDeleteExpr"] = Rule("cxx_delete_expr")
-default_rules_db["CxxUnaryExpr"] = Rule("cxx_unary_expr")
-default_rules_db["PackExpansionExpr"] = Rule("pack_expansion_expr")
-default_rules_db["SizeOfPackExpr"] = Rule("size_of_pack_expr")
-default_rules_db["LambdaExpr"] = Rule("lambda_expr")
-default_rules_db["ObjBoolLiteralExpr"] = Rule("obj_bool_literal_expr")
-default_rules_db["ObjSelfExpr"] = Rule("obj_self_expr")
-default_rules_db["UnexposedStmt"] = Rule("unexposed_stmt")
-default_rules_db["LabelStmt"] = Rule("label_stmt")
-default_rules_db["CompoundStmt"] = Rule("compound_stmt")
-default_rules_db["CaseStmt"] = Rule("case_stmt")
-default_rules_db["DefaultStmt"] = Rule("default_stmt")
-default_rules_db["IfStmt"] = Rule("if_stmt")
-default_rules_db["SwitchStmt"] = Rule("switch_stmt")
-default_rules_db["WhileStmt"] = Rule("while_stmt")
-default_rules_db["DoStmt"] = Rule("do_stmt")
-default_rules_db["ForStmt"] = Rule("for_stmt")
-default_rules_db["GotoStmt"] = Rule("goto_stmt")
-default_rules_db["IndirectGotoStmt"] = Rule("indirect_goto_stmt")
-default_rules_db["ContinueStmt"] = Rule("continue_stmt")
-default_rules_db["BreakStmt"] = Rule("break_stmt")
-default_rules_db["ReturnStmt"] = Rule("return_stmt")
-default_rules_db["AsmStmt"] = Rule("asm_stmt")
-default_rules_db["CxxCatchStmt"] = Rule("cxx_catch_stmt")
-default_rules_db["CxxTryStmt"] = Rule("cxx_try_stmt")
-default_rules_db["CxxForRangeStmt"] = Rule("cxx_for_range_stmt")
-default_rules_db["MsAsmStmt"] = Rule("ms_asm_stmt")
-default_rules_db["NullStmt"] = Rule("null_stmt")
-default_rules_db["DeclStmt"] = Rule("decl_stmt")
+default_rules_db["CstyleCastExpression"] = Rule("cstyle_cast_expr")
+default_rules_db["CompoundLiteralExpression"] = Rule("compound_literal_expr")
+default_rules_db["InitListExpression"] = Rule("init_list_expr")
+default_rules_db["AddrLabelExpression"] = Rule("addr_label_expr")
+default_rules_db["StatementExpression"] = Rule("stmtexpr")
+default_rules_db["GenericSelectionExpression"] = Rule("generic_selection_expr")
+default_rules_db["GnuNullExpression"] = Rule("gnu_null_expr")
+default_rules_db["CxxStaticCastExpression"] = Rule("cxx_static_cast_expr")
+default_rules_db["CxxDynamicCastExpression"] = Rule("cxx_dynamic_cast_expr")
+default_rules_db["CxxReinterpretCastExpression"] = Rule("cxx_reinterpret_cast_expr")
+default_rules_db["CxxConstCastExpression"] = Rule("cxx_const_cast_expr")
+default_rules_db["CxxFunctionalCastExpression"] = Rule("cxx_functional_cast_expr")
+default_rules_db["CxxTypeidExpression"] = Rule("cxx_typeid_expr")
+default_rules_db["CxxBoolLiteralExpression"] = Rule("cxx_bool_literal_expr")
+default_rules_db["CxxNullPointerLiteralExpression"] = Rule("cxx_null_ptr_literal_expr")
+default_rules_db["CxxThisExpression"] = Rule("cxx_this_expr")
+default_rules_db["CxxThrowExpression"] = Rule("cxx_throw_expr")
+default_rules_db["CxxNewExpression"] = Rule("cxx_new_expr")
+default_rules_db["CxxDeleteExpression"] = Rule("cxx_delete_expr")
+default_rules_db["CxxUnaryExpression"] = Rule("cxx_unary_expr")
+default_rules_db["PackExpansionExpression"] = Rule("pack_expansion_expr")
+default_rules_db["SizeOfPackExpression"] = Rule("size_of_pack_expr")
+default_rules_db["LambdaExpression"] = Rule("lambda_expr")
+default_rules_db["ObjectBoolLiteralExpression"] = Rule("obj_bool_literal_expr")
+default_rules_db["ObjectSelfExpression"] = Rule("obj_self_expr")
+default_rules_db["UnexposedStatement"] = Rule("unexposed_stmt")
+default_rules_db["LabelStatement"] = Rule("label_stmt")
+default_rules_db["CompoundStatement"] = Rule("compound_stmt")
+default_rules_db["CaseStatement"] = Rule("case_stmt")
+default_rules_db["DefaultStatement"] = Rule("default_stmt")
+default_rules_db["IfStatement"] = Rule("if_stmt")
+default_rules_db["SwitchStatement"] = Rule("switch_stmt")
+default_rules_db["WhileStatement"] = Rule("while_stmt")
+default_rules_db["DoStatement"] = Rule("do_stmt")
+default_rules_db["ForStatement"] = Rule("for_stmt")
+default_rules_db["GotoStatement"] = Rule("goto_stmt")
+default_rules_db["IndirectGotoStatement"] = Rule("indirect_goto_stmt")
+default_rules_db["ContinueStatement"] = Rule("continue_stmt")
+default_rules_db["BreakStatement"] = Rule("break_stmt")
+default_rules_db["ReturnStatement"] = Rule("return_stmt")
+default_rules_db["AsmStatement"] = Rule("asm_stmt")
+default_rules_db["CxxCatchStatement"] = Rule("cxx_catch_stmt")
+default_rules_db["CxxTryStatement"] = Rule("cxx_try_stmt")
+default_rules_db["CxxForRangeStatement"] = Rule("cxx_for_range_stmt")
+default_rules_db["MsAsmStatement"] = Rule("ms_asm_stmt")
+default_rules_db["NullStatement"] = Rule("null_stmt")
+default_rules_db["DeclarationStatement"] = Rule("decl_stmt")
 default_rules_db["TranslationUnit"] = Rule("translation_unit")
-default_rules_db["UnexposedAttr"] = Rule("unexposed_attr")
-default_rules_db["CxxFinalAttr"] = Rule("cxx_final_attr")
-default_rules_db["CxxOverrideAttr"] = Rule("cxx_override_attr")
-default_rules_db["AnnotateAttr"] = Rule("annotate_attr")
-default_rules_db["AsmLabelAttr"] = Rule("asm_label_attr")
-default_rules_db["PackedAttr"] = Rule("packed_attr")
-default_rules_db["PureAttr"] = Rule("pure_attr")
-default_rules_db["ConstAttr"] = Rule("const_attr")
-default_rules_db["NoduplicateAttr"] = Rule("noduplicate_attr")
+default_rules_db["UnexposedAttribute"] = Rule("unexposed_attr")
+default_rules_db["CxxFinalAttribute"] = Rule("cxx_final_attr")
+default_rules_db["CxxOverrideAttribute"] = Rule("cxx_override_attr")
+default_rules_db["AnnotateAttribute"] = Rule("annotate_attr")
+default_rules_db["AsmLabelAttribute"] = Rule("asm_label_attr")
+default_rules_db["PackedAttribute"] = Rule("packed_attr")
+default_rules_db["PureAttribute"] = Rule("pure_attr")
+default_rules_db["ConstAttribute"] = Rule("const_attr")
+default_rules_db["NoduplicateAttribute"] = Rule("noduplicate_attr")
 default_rules_db["PreprocessingDirective"] = Rule("preprocessing_directive")
 default_rules_db["MacroDefinition"] = Rule("macro_definition")
 default_rules_db["MacroInstantiation"] = Rule("macro_instantiation")
@@ -180,7 +180,7 @@ class Options:
         self.parser = argparse.ArgumentParser(
             prog="ncc.py",
             description="ncc is a development tool to help programmers "
-            "write C/C++ code that adheres to a some naming conventions. It automates the "
+            "write C/C++ code that adheres to adhere some naming conventions. It automates the "
             "process of checking C code to spare humans of this boring "
             "(but important) task. This makes it ideal for projects that want "
             "to enforce a coding standard.")
@@ -196,17 +196,16 @@ class Options:
         self.parser.add_argument('-b', '--dbdir', dest='cdbdir', help="Build path is used to "
                                  "read a `compile_commands.json` compile command database")
 
-        self.parser.add_argument('-d', '--dump', dest='dump', help="Build path is used to "
-                                 "read a `compile_commands.json` compile command database")
+        self.parser.add_argument('-d', '--dump', dest='dump', help="Dump all available options")
 
-        self.parser.add_argument('-o', '--output', dest='output', help="output file name where"
-                                 "naming convenction vialoations will be stored")
+        self.parser.add_argument('-o', '--output', dest='output', help='''output file name where
+                                 naming convenction vialoations will be stored''')
 
-        self.parser.add_argument('-x', '--extension', dest='extention', help="File extentions "
-                                 "that are applicable for naming convection validation")
+        self.parser.add_argument('-x', '--extension', dest='extention', help='''File extentions
+                                 that are applicable for naming convection validation''')
 
         self.parser.add_argument("path", metavar="FILE", nargs="+", type=str,
-                                 help="Path of file or directory")
+                                 help='''Path of file or directory''')
 
     def parse_cmd_line(self):
         self.args = self.parser.parse_args()
@@ -355,6 +354,19 @@ class Validator(object):
         sys.stderr.write(msg)
 
 
+def is_cxx_file(filename):
+    path, extension = os.path.splitext(filename)
+    if extension in file_extensions:
+        return True
+    return False
+
+
+def validate_file(validator, filename):
+    if is_cxx_file(filename):
+        print("Validating {}".format(filename))
+        validator.validate(filename)
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s',
                         filename='log.txt', filemode='w')
@@ -370,25 +382,15 @@ if __name__ == "__main__":
 
     """ Check the source code against the configured rules """
     v = Validator(rules_db)
-    for filename in op.next_file():
-        if not os.path.exists(filename):
-            sys.stderr.write("File '{}' does not exist\n".format(filename))
-        elif os.path.isfile(filename):
-            print("Validating {}".format(filename))
-            v.validate(filename)
-        elif os.path.isdir(filename):
-            if op.args.recurse:
-                # Get all files recursively and validate
-                print("Recursing directory {}".format(filename))
-                for (root, subdirs, subfiles) in os.walk(filename):
-                    for subfile in subfiles:
-                        path = root + '/' + subfile
-                        print("Validating {}".format(path))
-                        v.validate(path)
-            else:
-                # Validate all the files in the directory
-                for subfile in os.listdir(filename):
-                    path = filename + '/' + subfile
-                    if os.path.isfile(path):
-                        print("Validating {}".format(path))
-                        v.validate(path)
+    for path in op.next_file():
+        if not os.path.exists(path):
+            sys.stderr.write("File '{}' does not exist\n".format(path))
+        elif os.path.isfile(path):
+            validate_file(v, path)
+        elif os.path.isdir(path):
+            for (root, subdirs, files) in os.walk(path):
+                for filename in files:
+                    validate_file(v, root + '/' + filename)
+
+                if not op.args.recurse:
+                    break
