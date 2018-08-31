@@ -299,47 +299,47 @@ class RulesDb(object):
 
 
 class Validator(object):
-    def __init__(self, rule_db):
+    def __init__(self, rule_db, filename):
+        self.filename = filename
         self.rule_db = rule_db
+        self.node_stack = AstNodeStack()
 
-    def validate(self, filename):
         # commands = self.rule_db.get_compile_commands(filename)
         index = Index.create()
         unit = index.parse(filename, args=['-x', 'c++'])
-        cursor = unit.cursor
+        self.cursor = unit.cursor
 
-        node_stack = AstNodeStack()
-        return self.check(cursor, node_stack, filename, "")
+    def validate(self):
+        return self.check(self.cursor)
 
-    def check(self, node, node_stack, filename, depth):
+    def check(self, node):
         errors = 0
-        depth += "----"
         for child in node.get_children():
-            if self.is_local(child, filename):
+            if self.is_local(child, self.filename):
                 # get the node's rule and match the pattern. Report and error if pattern
                 # matching fails
-                rule, user_kind = self.get_rule(child, node_stack)
+                rule, user_kind = self.get_rule(child)
                 if rule and (not rule.pattern.match(child.spelling)):
                     self.notify_error(child, rule, user_kind)
                     errors += 1
 
-                # Members struct, class, and unions must be treated differently. So whenever
-                # we encounter these types we push it into a stack. Once all its children are
-                # validated pop it out of the stack
-                node_stack.push(child.kind)
-                errors += self.check(child, node_stack, filename, depth)
-                node_stack.pop()
+                # Members struct, class, and unions must be treated differently.
+                # So parent ast node information is pushed in to the stack.
+                # Once all its children are validated pop it out of the stack
+                self.node_stack.push(child.kind)
+                errors += self.check(child)
+                self.node_stack.pop()
 
         return errors
 
-    def get_rule(self, node, node_stack):
+    def get_rule(self, node):
         if not self.rule_db.is_rule_enabled(node.kind):
             return None, None
 
         user_kinds = self.rule_db.get_user_kinds(node.kind)
         for kind in user_kinds:
             rule = self.rule_db.get_rule(kind)
-            if rule.parent_kind == node_stack.peek():
+            if rule.parent_kind == self.node_stack.peek():
                 return rule, kind
 
         return self.rule_db.get_rule(user_kinds[0]), user_kinds[0]
@@ -357,19 +357,6 @@ class Validator(object):
         sys.stderr.write(msg)
 
 
-def is_cxx_file(filename):
-    path, extension = os.path.splitext(filename)
-    if extension in file_extensions:
-        return True
-    return False
-
-
-def validate_file(validator, filename):
-    if is_cxx_file(filename):
-        print("Validating {}".format(filename))
-        validator.validate(filename)
-
-
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s',
                         filename='log.txt', filemode='w')
@@ -383,17 +370,25 @@ if __name__ == "__main__":
     """ Creating the rules database """
     rules_db = RulesDb(op._style_file, op._db_dir)
 
+    def is_cxx_file(filename):
+        path, extension = os.path.splitext(filename)
+        if extension in file_extensions:
+            return True
+        return False
+
     """ Check the source code against the configured rules """
-    v = Validator(rules_db)
     for path in op.next_file():
-        if not os.path.exists(path):
-            sys.stderr.write("File '{}' does not exist\n".format(path))
-        elif os.path.isfile(path):
-            validate_file(v, path)
+        if os.path.isfile(path):
+            if is_cxx_file(path):
+                v = Validator(rules_db, path)
+                n = v.validate()
         elif os.path.isdir(path):
             for (root, subdirs, files) in os.walk(path):
                 for filename in files:
-                    validate_file(v, root + '/' + filename)
+                    path = root + '/' + filename
+                    if is_cxx_file(path):
+                        v = Validator(rules_db, path)
+                        n = v.validate()
 
                 if not op.args.recurse:
                     break
