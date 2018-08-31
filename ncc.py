@@ -186,24 +186,32 @@ class Options:
             "(but important) task. This makes it ideal for projects that want "
             "to enforce a coding standard.")
 
-        self.parser.add_argument('-r', '--recurse', action='store_true', dest="recurse",
+        self.parser.add_argument('--recurse', action='store_true', dest="recurse",
                                  help="Read all files under each directory, recursively")
 
-        self.parser.add_argument('-s', '--style', dest="style_file",
+        self.parser.add_argument('--style', dest="style_file",
                                  help="Read rules from the specified file. If the user does not"
                                  "provide a style file ncc will use ncc.style file from the"
                                  "present working directory.")
 
-        self.parser.add_argument('-b', '--dbdir', dest='cdbdir', help="Build path is used to "
-                                 "read a `compile_commands.json` compile command database")
+        # TODO
+        # self.parser.add_argument('--dbdir', dest='cdbdir', help="Build path is used to "
+        #                          "read a `compile_commands.json` compile command database")
 
-        self.parser.add_argument('-d', '--dump', dest='dump', help="Dump all available options")
+        self.parser.add_argument('--dump', dest='dump', action='store_true',
+                                 help="Dump all available options")
 
-        self.parser.add_argument('-o', '--output', dest='output', help='''output file name where
-                                 naming convenction vialoations will be stored''')
+        self.parser.add_argument('--output', dest='output', help="output file name where"
+                                 "naming convenction vialoations will be stored")
 
-        self.parser.add_argument('-x', '--extension', dest='extention', help='''File extentions
-                                 that are applicable for naming convection validation''')
+        self.parser.add_argument('--filetype', dest='filetype', help="File extentions type"
+                                 "that are applicable for naming convection validation")
+
+        self.parser.add_argument('--exclude', dest='exclude', help="Skip files matching the"
+                                 "pattern specified from recursive searches")
+
+        self.parser.add_argument('--exclude-dir', dest='exclude_dir', help="Skip the directories"
+                                 "matching the pattern specified")
 
         self.parser.add_argument("path", metavar="FILE", nargs="+", type=str,
                                  help='''Path of file or directory''')
@@ -211,8 +219,8 @@ class Options:
     def parse_cmd_line(self):
         self.args = self.parser.parse_args()
 
-        if self.args.cdbdir:
-            self._db_dir = self.args.cdbdir
+        # if self.args.cdbdir:
+        #     self._db_dir = self.args.cdbdir
 
         if self.args.style_file:
             self._style_file = self.args.style_file
@@ -306,22 +314,28 @@ class Validator(object):
 
         # commands = self.rule_db.get_compile_commands(filename)
         index = Index.create()
-        unit = index.parse(filename, args=['-x', 'c++'])
-        self.cursor = unit.cursor
+        self.cursor = index.parse(filename, args=['-x', 'c++']).cursor
 
     def validate(self):
         return self.check(self.cursor)
 
     def check(self, node):
+        """
+        Recursively visit all nodes of the AST and match against the patter provided by
+        the user. Return the total number of errors caught in the file
+        """
         errors = 0
         for child in node.get_children():
             if self.is_local(child, self.filename):
-                # get the node's rule and match the pattern. Report and error if pattern
-                # matching fails
-                rule, user_kind = self.get_rule(child)
-                if rule and (not rule.pattern.match(child.spelling)):
-                    self.notify_error(child, rule, user_kind)
-                    errors += 1
+
+                # This is the case when typedef of struct is causing double report of error
+                # TODO: Find a better way to handle it
+                parent = self.node_stack.peek()
+                if parent:
+                    if parent == CursorKind.TYPEDEF_DECL and child.kind == CursorKind.STRUCT_DECL:
+                        return 0
+
+                errors += self.match_pattern(child)
 
                 # Members struct, class, and unions must be treated differently.
                 # So parent ast node information is pushed in to the stack.
@@ -331,6 +345,17 @@ class Validator(object):
                 self.node_stack.pop()
 
         return errors
+
+    def match_pattern(self, node):
+        """
+        get the node's rule and match the pattern. Report and error if pattern
+        matching fails
+        """
+        rule, user_kind = self.get_rule(node)
+        if rule and (not rule.pattern.match(node.spelling)):
+            self.notify_error(node, rule, user_kind)
+            return 1
+        return 0
 
     def get_rule(self, node):
         if not self.rule_db.is_rule_enabled(node.kind):
@@ -344,8 +369,8 @@ class Validator(object):
 
         return self.rule_db.get_rule(user_kinds[0]), user_kinds[0]
 
-    """ Returns True is node belongs to the file being validated and not an include file """
     def is_local(self, node, filename):
+        """ Returns True is node belongs to the file being validated and not an include file """
         if node.location.file and node.location.file.name in filename:
             return True
         return False
@@ -355,6 +380,29 @@ class Validator(object):
         msg = fmt.format(node.location.file.name, node.location.line, node.location.column,
                          node.displayname, rule.pattern_str, user_kind)
         sys.stderr.write(msg)
+
+
+def do_validate(options, filename):
+    """
+    Returns true if the file should be validated
+    - Check if its a c/c++ file
+    - Check if the file is not excluded
+    """
+    path, extension = os.path.splitext(filename)
+    if extension not in file_extensions:
+        return False
+
+    # if options.args.exclude:
+    #     try:
+    #         print options.args.exclude
+    #         pattern = re.compile("*.h")
+    #         if (not pattern.match(filename)):
+    #             return False
+    #     except re.error as e:
+    #         sys.stderr.write('exclude pattern {} is invalid\n'.
+    #                          format(options.args.exclude, e.message))
+
+    return True
 
 
 if __name__ == "__main__":
@@ -370,23 +418,17 @@ if __name__ == "__main__":
     """ Creating the rules database """
     rules_db = RulesDb(op._style_file, op._db_dir)
 
-    def is_cxx_file(filename):
-        path, extension = os.path.splitext(filename)
-        if extension in file_extensions:
-            return True
-        return False
-
     """ Check the source code against the configured rules """
     for path in op.next_file():
         if os.path.isfile(path):
-            if is_cxx_file(path):
+            if do_validate(op, path):
                 v = Validator(rules_db, path)
                 n = v.validate()
         elif os.path.isdir(path):
             for (root, subdirs, files) in os.walk(path):
                 for filename in files:
                     path = root + '/' + filename
-                    if is_cxx_file(path):
+                    if do_validate(op, path):
                         v = Validator(rules_db, path)
                         n = v.validate()
 
