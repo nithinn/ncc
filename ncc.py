@@ -266,7 +266,7 @@ class RulesDb(object):
                     fixit = difflib.get_close_matches(e.message, default_rules_db.keys(),
                                                       n=1, cutoff=0.8)
                     if fixit:
-                        sys.stderr.write('Did you mean CursorKind: {}\n'.format(fixit[0]))
+                        sys.stderr.write('Did you mean CursorKind: {} ?\n'.format(fixit[0]))
                     sys.exit(1)
                 except re.error as e:
                     sys.stderr.write('"{}" pattern {} has {} \n'.
