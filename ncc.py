@@ -15,6 +15,7 @@ from clang.cindex import CursorKind
 
 
 # Clang cursor kind to ncc Defined cursor map
+default_rules_db = {}
 cursor_kind_map = defaultdict(list)
 special_kind = {CursorKind.STRUCT_DECL: 1, CursorKind.CLASS_DECL: 1}
 file_extensions = [".c", ".cpp", ".h", ".hpp"]
@@ -25,11 +26,12 @@ class Rule(object):
         self.clang_kind_str = clang_kind_str
         self.parent_kind = parent_kind
         self.pattern_str = pattern_str
+        self.includes = []
+        self.excludes = []
         self.pattern = re.compile(pattern_str)
 
 
-default_rules_db = {}
-
+# All supported rules
 default_rules_db["StructName"] = Rule("struct_decl")
 default_rules_db["UnionName"] = Rule("union_decl")
 default_rules_db["ClassName"] = Rule("class_decl")
@@ -301,19 +303,19 @@ class Validator(object):
         self.rule_db = rule_db
 
     def validate(self, filename):
-        commands = self.rule_db.get_compile_commands(filename)
+        # commands = self.rule_db.get_compile_commands(filename)
         index = Index.create()
-        unit = index.parse(filename, args=commands)
+        unit = index.parse(filename, args=['-x', 'c++'])
         cursor = unit.cursor
 
         node_stack = AstNodeStack()
-        return self.check(cursor, node_stack, filename)
+        return self.check(cursor, node_stack, filename, "")
 
-    def check(self, node, node_stack, filename):
+    def check(self, node, node_stack, filename, depth):
         errors = 0
+        depth += "----"
         for child in node.get_children():
             if self.is_local(child, filename):
-
                 # get the node's rule and match the pattern. Report and error if pattern
                 # matching fails
                 rule, user_kind = self.get_rule(child, node_stack)
@@ -321,15 +323,12 @@ class Validator(object):
                     self.notify_error(child, rule, user_kind)
                     errors += 1
 
-                if child.kind in special_kind:
-                    # Members struct, class, and unions must be treated differently. So whenever
-                    # we encounter these types we push it into a stack. Once all its children are
-                    # validated pop it out of the stack
-                    node_stack.push(child.kind)
-                    errors += self.check(child, node_stack, filename)
-                    node_stack.pop()
-                else:
-                    errors += self.check(child, node_stack, filename)
+                # Members struct, class, and unions must be treated differently. So whenever
+                # we encounter these types we push it into a stack. Once all its children are
+                # validated pop it out of the stack
+                node_stack.push(child.kind)
+                errors += self.check(child, node_stack, filename, depth)
+                node_stack.pop()
 
         return errors
 
