@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import logging
-import pprint
 import argparse
 import yaml
 import re
@@ -16,7 +15,7 @@ from clang.cindex import CursorKind
 
 # Clang cursor kind to ncc Defined cursor map
 default_rules_db = {}
-cursor_kind_map = defaultdict(list)
+clang_to_user_map = defaultdict(list)
 special_kind = {CursorKind.STRUCT_DECL: 1, CursorKind.CLASS_DECL: 1}
 file_extensions = [".c", ".cpp", ".h", ".hpp"]
 
@@ -26,9 +25,9 @@ class Rule(object):
         self.clang_kind_str = clang_kind_str
         self.parent_kind = parent_kind
         self.pattern_str = pattern_str
+        self.pattern = re.compile(pattern_str)
         self.includes = []
         self.excludes = []
-        self.pattern = re.compile(pattern_str)
 
 
 # All supported rules
@@ -175,8 +174,8 @@ class Report(object):
 class Options:
     def __init__(self):
         self.args = None
-        self._style_file = 'ncc.style'
         self._db_dir = None
+        self._style_file = None
 
         self.parser = argparse.ArgumentParser(
             prog="ncc.py",
@@ -191,8 +190,8 @@ class Options:
 
         self.parser.add_argument('--style', dest="style_file",
                                  help="Read rules from the specified file. If the user does not"
-                                 "provide a style file ncc will use ncc.style file from the"
-                                 "present working directory.")
+                                 "provide a style file ncc will use all style rules. To print"
+                                 "all style rules use --dump option")
 
         # TODO
         # self.parser.add_argument('--dbdir', dest='cdbdir', help="Build path is used to "
@@ -213,7 +212,7 @@ class Options:
         self.parser.add_argument('--exclude-dir', dest='exclude_dir', help="Skip the directories"
                                  "matching the pattern specified")
 
-        self.parser.add_argument("path", metavar="FILE", nargs="+", type=str,
+        self.parser.add_argument("path", metavar="FILE", nargs="*", type=str,
                                  help='''Path of file or directory''')
 
     def parse_cmd_line(self):
@@ -222,17 +221,21 @@ class Options:
         # if self.args.cdbdir:
         #     self._db_dir = self.args.cdbdir
 
+        if self.args.dump:
+            self.dump_all_rules()
+
         if self.args.style_file:
             self._style_file = self.args.style_file
+            if not os.path.exists(self._style_file):
+                sys.stderr.write("Style file '{}' not found!\n".format(self._style_file))
+                sys.exit(1)
 
-        if not os.path.exists(self._style_file):
-            sys.stderr.write("Style file '{}' not found!\n".format(self._style_file))
-            sys.exit(1)
-
-        if self.args.dump:
-            with open(self._style_file) as stylefile:
-                r = yaml.safe_load(stylefile)
-                pp.pprint(r)
+    def dump_all_rules(self):
+        print("----------------------------------------------------------")
+        print("{:<35} | {}".format("Rule Name", "Pattern"))
+        print("----------------------------------------------------------")
+        for (key, value) in default_rules_db.iteritems():
+            print("{:<35} : {}".format(key, value.pattern_str))
 
     def next_file(self):
         for filename in self.args.path:
@@ -251,43 +254,44 @@ class RulesDb(object):
             except Exception as e:
                 sys.exit(1)
 
-        self.build_cursor_kind_map()
-        self.build_rules_db(style_file)
+        self.build_clang_to_user_map()
 
-    def build_rules_db(self, style_file):
-        if style_file is not None:
-            with open(style_file) as stylefile:
-                style_rules = yaml.safe_load(stylefile)
-
-            cursor_kinds = {kind.name.lower(): kind for kind in CursorKind.get_all_kinds()}
-
-            for (user_kind, pattern_str) in style_rules.items():
-                try:
-                    clang_kind_str = default_rules_db[user_kind].clang_kind_str
-                    clang_kind = cursor_kinds[clang_kind_str]
-                    if clang_kind:
-                        self.__rule_db[user_kind] = default_rules_db[user_kind]
-                        self.__rule_db[user_kind].pattern_str = pattern_str
-                        self.__rule_db[user_kind].pattern = re.compile(pattern_str)
-                        self.__clang_db[clang_kind] = cursor_kind_map[clang_kind_str]
-
-                except KeyError as e:
-                    sys.stderr.write('{} is not a valid C/C++ construct name\n'.format(e.message))
-                    fixit = difflib.get_close_matches(e.message, default_rules_db.keys(),
-                                                      n=1, cutoff=0.8)
-                    if fixit:
-                        sys.stderr.write('Did you mean CursorKind: {} ?\n'.format(fixit[0]))
-                    sys.exit(1)
-                except re.error as e:
-                    sys.stderr.write('"{}" pattern {} has {} \n'.
-                                     format(user_kind, pattern_str, e.message))
-                    sys.exit(1)
+        if style_file:
+            self.build_rules_db(style_file)
         else:
             self.__rule_db = default_rules_db
 
-    def build_cursor_kind_map(self):
+    def build_rules_db(self, style_file):
+        with open(style_file) as stylefile:
+            style_rules = yaml.safe_load(stylefile)
+
+        cursor_kinds = {kind.name.lower(): kind for kind in CursorKind.get_all_kinds()}
+
+        for (user_kind, pattern_str) in style_rules.items():
+            try:
+                clang_kind_str = default_rules_db[user_kind].clang_kind_str
+                clang_kind = cursor_kinds[clang_kind_str]
+                if clang_kind:
+                    self.__rule_db[user_kind] = default_rules_db[user_kind]
+                    self.__rule_db[user_kind].pattern_str = pattern_str
+                    self.__rule_db[user_kind].pattern = re.compile(pattern_str)
+                    self.__clang_db[clang_kind] = clang_to_user_map[clang_kind_str]
+
+            except KeyError as e:
+                sys.stderr.write('{} is not a valid C/C++ construct name\n'.format(e.message))
+                fixit = difflib.get_close_matches(e.message, default_rules_db.keys(),
+                                                  n=1, cutoff=0.8)
+                if fixit:
+                    sys.stderr.write('Did you mean CursorKind: {} ?\n'.format(fixit[0]))
+                sys.exit(1)
+            except re.error as e:
+                sys.stderr.write('"{}" pattern {} has {} \n'.
+                                 format(user_kind, pattern_str, e.message))
+                sys.exit(1)
+
+    def build_clang_to_user_map(self):
         for key, value in default_rules_db.iteritems():
-            cursor_kind_map[value.clang_kind_str].append(key)
+            clang_to_user_map[value.clang_kind_str].append(key)
 
     def get_compile_commands(self, filename):
         if self.__compile_db:
@@ -409,8 +413,6 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s',
                         filename='log.txt', filemode='w')
 
-    pp = pprint.PrettyPrinter(indent=2)
-
     """ Parse all command line arguments and validate """
     op = Options()
     op.parse_cmd_line()
@@ -419,18 +421,22 @@ if __name__ == "__main__":
     rules_db = RulesDb(op._style_file, op._db_dir)
 
     """ Check the source code against the configured rules """
+    errors = 0
     for path in op.next_file():
         if os.path.isfile(path):
             if do_validate(op, path):
                 v = Validator(rules_db, path)
-                n = v.validate()
+                errors += v.validate()
         elif os.path.isdir(path):
             for (root, subdirs, files) in os.walk(path):
                 for filename in files:
                     path = root + '/' + filename
                     if do_validate(op, path):
                         v = Validator(rules_db, path)
-                        n = v.validate()
+                        errors += v.validate()
 
                 if not op.args.recurse:
                     break
+
+    if errors:
+        print("Total number of errors = {}".format(errors))
