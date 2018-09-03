@@ -18,7 +18,7 @@ Work In Progress
 
 ## Usage
 
-    ncc.py [-h] [-r] [-s STYLE_FILE] [-b CDBDIR] [-d DUMP] FILE [FILE ...]
+    ncc.py [OPTIONS...] FILE [FILE ...]
 
 For standalone files:
 
@@ -44,12 +44,17 @@ should begin with m_
     FunctionName: '^[A-Z].*$'
     Namespace: '^.*$'
 
+## Sample Output
+
+    examples/test.h:5:7: "Test" does not match "^C.*$" associated with ClassName
+    examples/test.hpp:12:9: "t" does not match "^m_.*$" associated with ClassMemberVariable
+    Total number of errors = 2
+
 ## License
 
 Copyright © 2018 Nithin Nellikunnu
 
 Distributed under the MIT License (MIT).
-
 
 ## Thank You
 Daniel J. Hofmann
