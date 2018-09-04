@@ -29,6 +29,7 @@ import re
 import sys
 import difflib
 import os
+import fnmatch
 from collections import defaultdict
 from clang.cindex import Index
 from clang.cindex import CompilationDatabase
@@ -204,6 +205,7 @@ class Options:
         self.args = None
         self._db_dir = None
         self._style_file = None
+        self.file_exclusions = None
 
         self.parser = argparse.ArgumentParser(
             prog="ncc.py",
@@ -221,9 +223,8 @@ class Options:
                                  "provide a style file ncc will use all style rules. To print"
                                  "all style rules use --dump option")
 
-        # TODO
-        # self.parser.add_argument('--dbdir', dest='cdbdir', help="Build path is used to "
-        #                          "read a `compile_commands.json` compile command database")
+        self.parser.add_argument('--cdbdir', dest='cdbdir', help="Build path is used to "
+                                 "read a `compile_commands.json` compile command database")
 
         self.parser.add_argument('--dump', dest='dump', action='store_true',
                                  help="Dump all available options")
@@ -234,20 +235,22 @@ class Options:
         self.parser.add_argument('--filetype', dest='filetype', help="File extentions type"
                                  "that are applicable for naming convection validation")
 
-        self.parser.add_argument('--exclude', dest='exclude', help="Skip files matching the"
-                                 "pattern specified from recursive searches")
+        self.parser.add_argument('--exclude', dest='exclude', nargs="+", help="Skip files "
+                                 "matching the pattern specified from recursive searches. It "
+                                 "matches a specified pattern according to the rules used by "
+                                 "the Unix shell")
 
         self.parser.add_argument('--exclude-dir', dest='exclude_dir', help="Skip the directories"
                                  "matching the pattern specified")
 
-        self.parser.add_argument("path", metavar="FILE", nargs="*", type=str,
-                                 help='''Path of file or directory''')
+        self.parser.add_argument('--path', dest='path', nargs="+",
+                                 help="Path of file or directory")
 
     def parse_cmd_line(self):
         self.args = self.parser.parse_args()
 
-        # if self.args.cdbdir:
-        #     self._db_dir = self.args.cdbdir
+        if self.args.cdbdir:
+            self._db_dir = self.args.cdbdir
 
         if self.args.dump:
             self.dump_all_rules()
@@ -264,10 +267,6 @@ class Options:
         print("----------------------------------------------------------")
         for (key, value) in default_rules_db.iteritems():
             print("{:<35} : {}".format(key, value.pattern_str))
-
-    def next_file(self):
-        for filename in self.args.path:
-            yield filename
 
 
 class RulesDb(object):
@@ -336,9 +335,12 @@ class Validator(object):
         self.rule_db = rule_db
         self.node_stack = AstNodeStack()
 
-        # commands = self.rule_db.get_compile_commands(filename)
         index = Index.create()
-        self.cursor = index.parse(filename, args=['-x', 'c++']).cursor
+        commands = self.rule_db.get_compile_commands(filename)
+        if commands:
+            self.cursor = index.parse(filename, args=commands).cursor
+        else:
+            self.cursor = index.parse(filename, args=['-x', 'c++']).cursor
 
     def validate(self):
         return self.check(self.cursor)
@@ -416,15 +418,10 @@ def do_validate(options, filename):
     if extension not in file_extensions:
         return False
 
-    # if options.args.exclude:
-    #     try:
-    #         print options.args.exclude
-    #         pattern = re.compile("*.h")
-    #         if (not pattern.match(filename)):
-    #             return False
-    #     except re.error as e:
-    #         sys.stderr.write('exclude pattern {} is invalid\n'.
-    #                          format(options.args.exclude, e.message))
+    if options.args.exclude:
+        for item in options.args.exclude:
+            if fnmatch.fnmatch(filename, item):
+                return False
 
     return True
 
@@ -437,12 +434,15 @@ if __name__ == "__main__":
     op = Options()
     op.parse_cmd_line()
 
+    if op.args.path is None:
+        sys.exit(0)
+
     """ Creating the rules database """
     rules_db = RulesDb(op._style_file, op._db_dir)
 
     """ Check the source code against the configured rules """
     errors = 0
-    for path in op.next_file():
+    for path in op.args.path:
         if os.path.isfile(path):
             if do_validate(op, path):
                 v = Validator(rules_db, path)
