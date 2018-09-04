@@ -18,25 +18,23 @@ Work In Progress
 
 ## Usage
 
-    ncc.py [OPTIONS...] FILE [FILE ...]
-
-For standalone files:
-
-    ncc.py --style=styles/ncc.style examples/test.cpp
-
-For recursing through a directory structure:
-
-    ncc.py --style=styles/ncc.style --recurse examples
+    ncc.py [--help] [--recurse] [--style STYLE_FILE] [--cdbdir CDBDIR] [--dump]
+           [--output OUTPUT] [--filetype FILETYPE] [--exclude EXCLUDE [EXCLUDE ...]]
+           [--path PATH [PATH ...]]
 
 For detailed description of all options:
 
     ncc.py --help
 
+To print all rules:
+    
+    ncc.py --dump
+
 ## Style Defintion
 
 Style for c/c++ constructs are defined by regular expresssions. For e.g the below rules say that
 a struct can have any character, a class name should begin with 'C', and a class member variable
-should begin with m_
+should begin with m_, and a function name should begin with uppercase alphabet
 
     StructName: '^.*$'
     ClassName: '^C.*$'
