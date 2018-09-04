@@ -44,11 +44,17 @@ should begin with m_
     FunctionName: '^[A-Z].*$'
     Namespace: '^.*$'
 
-## Sample Output
+## Example Usage
 
-    examples/test.h:5:7: "Test" does not match "^C.*$" associated with ClassName
-    examples/test.hpp:12:9: "t" does not match "^m_.*$" associated with ClassMemberVariable
-    Total number of errors = 2
+### Check file test.cpp for naming convention violations:
+
+    ./ncc.py --style examples/ncc.style --path examples/test.cpp
+
+    examples/test.cpp:16:7: "B" does not match "^C.*$" associated with ClassName
+    examples/test.cpp:28:9: "b" does not match "^m_.*$" associated with ClassMemberVariable
+    examples/test.cpp:31:5: "main(int, const char **)" does not match "^[A-Z].*$" associated with FunctionName
+    Total number of errors = 3
+
 
 ## License
 
