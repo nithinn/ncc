@@ -194,12 +194,6 @@ class AstNodeStack(object):
         return None
 
 
-class Report(object):
-    @staticmethod
-    def log(line, column, severity, message):
-        print('[{:<7}]# [{}:{}] {}'.format(severity, line, column, message))
-
-
 class Options:
     def __init__(self):
         self.args = None
@@ -457,6 +451,9 @@ if __name__ == "__main__":
 
                 if not op.args.recurse:
                     break
+        else:
+            sys.stderr.write("File '{}' not found!\n".format(path))
+
 
     if errors:
         print("Total number of errors = {}".format(errors))
