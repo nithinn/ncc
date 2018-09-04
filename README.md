@@ -7,9 +7,6 @@ a some naming conventions. It automates the process of checking C/C++ code to
 spare humans of this boring (but important) task. This makes it ideal for
 projects that want to enforce a coding standard.
 
-## Status
-Work In Progress
-
 ## Requirements
 
 * python2
