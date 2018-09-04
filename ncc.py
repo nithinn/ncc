@@ -240,8 +240,8 @@ class Options:
                                  "matches a specified pattern according to the rules used by "
                                  "the Unix shell")
 
-        self.parser.add_argument('--exclude-dir', dest='exclude_dir', help="Skip the directories"
-                                 "matching the pattern specified")
+        # self.parser.add_argument('--exclude-dir', dest='exclude_dir', help="Skip the directories"
+        #                          "matching the pattern specified")
 
         self.parser.add_argument('--path', dest='path', nargs="+",
                                  help="Path of file or directory")
