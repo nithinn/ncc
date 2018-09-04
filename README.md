@@ -55,6 +55,18 @@ should begin with m_
     examples/test.cpp:31:5: "main(int, const char **)" does not match "^[A-Z].*$" associated with FunctionName
     Total number of errors = 3
 
+### Recursively search all files under 'examples' directory for naming violations, but exclude '*.cpp' and '*.h files
+    ./ncc.py --style examples/ncc.style --recurse --exclude *.cpp *.h --path examples
+
+    examples/test.hpp:4:7: "Test" does not match "^C.*$" associated with ClassName
+    examples/test.hpp:12:9: "t" does not match "^m_.*$" associated with ClassMemberVariable
+    examples/test.hpp:19:9: "_aaa" does not match "^[a-z].*$" associated with StructMemberVariable
+    examples/test.c:8:9: "_b" does not match "^[a-z].*$" associated with StructMemberVariable
+    examples/test.c:9:9: "_c" does not match "^[a-z].*$" associated with StructMemberVariable
+    examples/tmp/test.hpp:4:7: "Test" does not match "^C.*$" associated with ClassName
+    examples/tmp/test.hpp:12:9: "t" does not match "^m_.*$" associated with ClassMemberVariable
+    examples/tmp/test.hpp:19:9: "_aaa" does not match "^[a-z].*$" associated with StructMemberVariable
+    Total number of errors = 8
 
 ## License
 
