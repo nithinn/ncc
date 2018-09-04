@@ -55,7 +55,7 @@ should begin with m_
     examples/test.cpp:31:5: "main(int, const char **)" does not match "^[A-Z].*$" associated with FunctionName
     Total number of errors = 3
 
-### Recursively search all files under 'examples' directory for naming violations, but exclude '*.cpp' and '*.h files
+### Recursively find all files under 'examples' directory, but exclude '*.cpp' and '*.h' files
     ./ncc.py --style examples/ncc.style --recurse --exclude *.cpp *.h --path examples
 
     examples/test.hpp:4:7: "Test" does not match "^C.*$" associated with ClassName
