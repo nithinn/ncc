@@ -384,8 +384,8 @@ class Validator(object):
         user_kinds = self.rule_db.get_user_kinds(node.kind)
         for kind in user_kinds:
             rule = self.rule_db.get_rule(kind)
-            if rule.parent_kind == self.node_stack.peek():
-                return rule, kind
+            if rule and rule.parent_kind == self.node_stack.peek():
+                    return rule, kind
 
         return self.rule_db.get_rule(user_kinds[0]), user_kinds[0]
 
