@@ -44,7 +44,8 @@ file_extensions = [".c", ".cpp", ".h", ".hpp"]
 
 
 class Rule(object):
-    def __init__(self, clang_kind, parent_kind=None, pattern_str='^.*$'):
+    def __init__(self, name, clang_kind, parent_kind=None, pattern_str='^.*$'):
+        self.name = name
         self.clang_kind = clang_kind
         self.parent_kind = parent_kind
         self.pattern_str = pattern_str
@@ -59,122 +60,153 @@ class Rule(object):
 
 
 # All supported rules
-default_rules_db["StructName"] = Rule(CursorKind.STRUCT_DECL)
-default_rules_db["UnionName"] = Rule(CursorKind.UNION_DECL)
-default_rules_db["ClassName"] = Rule(CursorKind.CLASS_DECL)
-default_rules_db["EnumName"] = Rule(CursorKind.ENUM_DECL)
-default_rules_db["ClassMemberVariable"] = Rule(CursorKind.FIELD_DECL, CursorKind.CLASS_DECL)
-default_rules_db["StructMemberVariable"] = Rule(CursorKind.FIELD_DECL, CursorKind.STRUCT_DECL)
-default_rules_db["UnionMemberVariable"] = Rule(CursorKind.FIELD_DECL, CursorKind.UNION_DECL)
-default_rules_db["EnumConstantName"] = Rule(CursorKind.ENUM_CONSTANT_DECL)
-default_rules_db["FunctionName"] = Rule(CursorKind.FUNCTION_DECL)
-default_rules_db["VariableName"] = Rule(CursorKind.VAR_DECL)
-default_rules_db["ParameterName"] = Rule(CursorKind.PARM_DECL)
-default_rules_db["TypedefName"] = Rule(CursorKind.TYPEDEF_DECL)
-default_rules_db["CppMethod"] = Rule(CursorKind.CXX_METHOD)
-default_rules_db["Namespace"] = Rule(CursorKind.NAMESPACE)
-default_rules_db["ConversionFunction"] = Rule(CursorKind.CONVERSION_FUNCTION)
-default_rules_db["TemplateTypeParameter"] = Rule(CursorKind.TEMPLATE_TYPE_PARAMETER)
-default_rules_db["TemplateNonTypeParameter"] = Rule(CursorKind.TEMPLATE_NON_TYPE_PARAMETER)
-default_rules_db["TemplateTemplateParameter"] = Rule(CursorKind.TEMPLATE_TEMPLATE_PARAMETER)
-default_rules_db["FunctionTemplate"] = Rule(CursorKind.FUNCTION_TEMPLATE)
-default_rules_db["ClassTemplate"] = Rule(CursorKind.CLASS_TEMPLATE)
+default_rules_db["StructName"] = Rule("StructName", CursorKind.STRUCT_DECL)
+default_rules_db["UnionName"] = Rule("UnionName", CursorKind.UNION_DECL)
+default_rules_db["ClassName"] = Rule("ClassName", CursorKind.CLASS_DECL)
+default_rules_db["EnumName"] = Rule("EnumName", CursorKind.ENUM_DECL)
+default_rules_db["ClassMemberVariable"] = Rule(
+    "ClassMemberVariable", CursorKind.FIELD_DECL, CursorKind.CLASS_DECL)
+default_rules_db["StructMemberVariable"] = Rule(
+    "StructMemberVariable", CursorKind.FIELD_DECL, CursorKind.STRUCT_DECL)
+default_rules_db["UnionMemberVariable"] = Rule(
+    "UnionMemberVariable", CursorKind.FIELD_DECL, CursorKind.UNION_DECL)
+default_rules_db["EnumConstantName"] = Rule("EnumConstantName", CursorKind.ENUM_CONSTANT_DECL)
+default_rules_db["FunctionName"] = Rule("FunctionName", CursorKind.FUNCTION_DECL)
+default_rules_db["VariableName"] = Rule("VariableName", CursorKind.VAR_DECL)
+default_rules_db["ParameterName"] = Rule("ParameterName", CursorKind.PARM_DECL)
+default_rules_db["TypedefName"] = Rule("TypedefName", CursorKind.TYPEDEF_DECL)
+default_rules_db["CppMethod"] = Rule("CppMethod", CursorKind.CXX_METHOD)
+default_rules_db["Namespace"] = Rule("Namespace", CursorKind.NAMESPACE)
+default_rules_db["ConversionFunction"] = Rule("ConversionFunction", CursorKind.CONVERSION_FUNCTION)
+default_rules_db["TemplateTypeParameter"] = Rule(
+    "TemplateTypeParameter", CursorKind.TEMPLATE_TYPE_PARAMETER)
+default_rules_db["TemplateNonTypeParameter"] = Rule(
+    "TemplateNonTypeParameter", CursorKind.TEMPLATE_NON_TYPE_PARAMETER)
+default_rules_db["TemplateTemplateParameter"] = Rule(
+    "TemplateTemplateParameter", CursorKind.TEMPLATE_TEMPLATE_PARAMETER)
+default_rules_db["FunctionTemplate"] = Rule("FunctionTemplate", CursorKind.FUNCTION_TEMPLATE)
+default_rules_db["ClassTemplate"] = Rule("ClassTemplate", CursorKind.CLASS_TEMPLATE)
 default_rules_db["ClassTemplatePartialSpecialization"] = Rule(
-    CursorKind.CLASS_TEMPLATE_PARTIAL_SPECIALIZATION)
-default_rules_db["NamespaceAlias"] = Rule(CursorKind.NAMESPACE_ALIAS)
-default_rules_db["UsingDirective"] = Rule(CursorKind.USING_DIRECTIVE)
-default_rules_db["UsingDeclaration"] = Rule(CursorKind.USING_DECLARATION)
-default_rules_db["TypeAliasName"] = Rule(CursorKind.TYPE_ALIAS_DECL)
-default_rules_db["ClassAccessSpecifier"] = Rule(CursorKind.CXX_ACCESS_SPEC_DECL)
-default_rules_db["TypeReference"] = Rule(CursorKind.TYPE_REF)
-default_rules_db["CxxBaseSpecifier"] = Rule(CursorKind.CXX_BASE_SPECIFIER)
-default_rules_db["TemplateReference"] = Rule(CursorKind.TEMPLATE_REF)
-default_rules_db["NamespaceReference"] = Rule(CursorKind.NAMESPACE_REF)
-default_rules_db["MemberReference"] = Rule(CursorKind.MEMBER_REF)
-default_rules_db["LabelReference"] = Rule(CursorKind.LABEL_REF)
-default_rules_db["OverloadedDeclarationReference"] = Rule(CursorKind.OVERLOADED_DECL_REF)
-default_rules_db["VariableReference"] = Rule(CursorKind.VARIABLE_REF)
-default_rules_db["InvalidFile"] = Rule(CursorKind.INVALID_FILE)
-default_rules_db["NoDeclarationFound"] = Rule(CursorKind.NO_DECL_FOUND)
-default_rules_db["NotImplemented"] = Rule(CursorKind.NOT_IMPLEMENTED)
-default_rules_db["InvalidCode"] = Rule(CursorKind.INVALID_CODE)
-default_rules_db["UnexposedExpression"] = Rule(CursorKind.UNEXPOSED_EXPR)
-default_rules_db["DeclarationReferenceExpression"] = Rule(CursorKind.DECL_REF_EXPR)
-default_rules_db["MemberReferenceExpression"] = Rule(CursorKind.MEMBER_REF_EXPR)
-default_rules_db["CallExpression"] = Rule(CursorKind.CALL_EXPR)
-default_rules_db["BlockExpression"] = Rule(CursorKind.BLOCK_EXPR)
-default_rules_db["IntegerLiteral"] = Rule(CursorKind.INTEGER_LITERAL)
-default_rules_db["FloatingLiteral"] = Rule(CursorKind.FLOATING_LITERAL)
-default_rules_db["ImaginaryLiteral"] = Rule(CursorKind.IMAGINARY_LITERAL)
-default_rules_db["StringLiteral"] = Rule(CursorKind.STRING_LITERAL)
-default_rules_db["CharacterLiteral"] = Rule(CursorKind.CHARACTER_LITERAL)
-default_rules_db["ParenExpression"] = Rule(CursorKind.PAREN_EXPR)
-default_rules_db["UnaryOperator"] = Rule(CursorKind.UNARY_OPERATOR)
-default_rules_db["ArraySubscriptExpression"] = Rule(CursorKind.ARRAY_SUBSCRIPT_EXPR)
-default_rules_db["BinaryOperator"] = Rule(CursorKind.BINARY_OPERATOR)
-default_rules_db["CompoundAssignmentOperator"] = Rule(CursorKind.COMPOUND_ASSIGNMENT_OPERATOR)
-default_rules_db["ConditionalOperator"] = Rule(CursorKind.CONDITIONAL_OPERATOR)
-default_rules_db["CstyleCastExpression"] = Rule(CursorKind.CSTYLE_CAST_EXPR)
-default_rules_db["CompoundLiteralExpression"] = Rule(CursorKind.COMPOUND_LITERAL_EXPR)
-default_rules_db["InitListExpression"] = Rule(CursorKind.INIT_LIST_EXPR)
-default_rules_db["AddrLabelExpression"] = Rule(CursorKind.ADDR_LABEL_EXPR)
-default_rules_db["StatementExpression"] = Rule(CursorKind.StmtExpr)
-default_rules_db["GenericSelectionExpression"] = Rule(CursorKind.GENERIC_SELECTION_EXPR)
-default_rules_db["GnuNullExpression"] = Rule(CursorKind.GNU_NULL_EXPR)
-default_rules_db["CxxStaticCastExpression"] = Rule(CursorKind.CXX_STATIC_CAST_EXPR)
-default_rules_db["CxxDynamicCastExpression"] = Rule(CursorKind.CXX_DYNAMIC_CAST_EXPR)
-default_rules_db["CxxReinterpretCastExpression"] = Rule(CursorKind.CXX_REINTERPRET_CAST_EXPR)
-default_rules_db["CxxConstCastExpression"] = Rule(CursorKind.CXX_CONST_CAST_EXPR)
-default_rules_db["CxxFunctionalCastExpression"] = Rule(CursorKind.CXX_FUNCTIONAL_CAST_EXPR)
-default_rules_db["CxxTypeidExpression"] = Rule(CursorKind.CXX_TYPEID_EXPR)
-default_rules_db["CxxBoolLiteralExpression"] = Rule(CursorKind.CXX_BOOL_LITERAL_EXPR)
-default_rules_db["CxxNullPointerLiteralExpression"] = Rule(CursorKind.CXX_NULL_PTR_LITERAL_EXPR)
-default_rules_db["CxxThisExpression"] = Rule(CursorKind.CXX_THIS_EXPR)
-default_rules_db["CxxThrowExpression"] = Rule(CursorKind.CXX_THROW_EXPR)
-default_rules_db["CxxNewExpression"] = Rule(CursorKind.CXX_NEW_EXPR)
-default_rules_db["CxxDeleteExpression"] = Rule(CursorKind.CXX_DELETE_EXPR)
-default_rules_db["CxxUnaryExpression"] = Rule(CursorKind.CXX_UNARY_EXPR)
-default_rules_db["PackExpansionExpression"] = Rule(CursorKind.PACK_EXPANSION_EXPR)
-default_rules_db["SizeOfPackExpression"] = Rule(CursorKind.SIZE_OF_PACK_EXPR)
-default_rules_db["LambdaExpression"] = Rule(CursorKind.LAMBDA_EXPR)
-default_rules_db["ObjectBoolLiteralExpression"] = Rule(CursorKind.OBJ_BOOL_LITERAL_EXPR)
-default_rules_db["ObjectSelfExpression"] = Rule(CursorKind.OBJ_SELF_EXPR)
-default_rules_db["UnexposedStatement"] = Rule(CursorKind.UNEXPOSED_STMT)
-default_rules_db["LabelStatement"] = Rule(CursorKind.LABEL_STMT)
-default_rules_db["CompoundStatement"] = Rule(CursorKind.COMPOUND_STMT)
-default_rules_db["CaseStatement"] = Rule(CursorKind.CASE_STMT)
-default_rules_db["DefaultStatement"] = Rule(CursorKind.DEFAULT_STMT)
-default_rules_db["IfStatement"] = Rule(CursorKind.IF_STMT)
-default_rules_db["SwitchStatement"] = Rule(CursorKind.SWITCH_STMT)
-default_rules_db["WhileStatement"] = Rule(CursorKind.WHILE_STMT)
-default_rules_db["DoStatement"] = Rule(CursorKind.DO_STMT)
-default_rules_db["ForStatement"] = Rule(CursorKind.FOR_STMT)
-default_rules_db["GotoStatement"] = Rule(CursorKind.GOTO_STMT)
-default_rules_db["IndirectGotoStatement"] = Rule(CursorKind.INDIRECT_GOTO_STMT)
-default_rules_db["ContinueStatement"] = Rule(CursorKind.CONTINUE_STMT)
-default_rules_db["BreakStatement"] = Rule(CursorKind.BREAK_STMT)
-default_rules_db["ReturnStatement"] = Rule(CursorKind.RETURN_STMT)
-default_rules_db["AsmStatement"] = Rule(CursorKind.ASM_STMT)
-default_rules_db["CxxCatchStatement"] = Rule(CursorKind.CXX_CATCH_STMT)
-default_rules_db["CxxTryStatement"] = Rule(CursorKind.CXX_TRY_STMT)
-default_rules_db["CxxForRangeStatement"] = Rule(CursorKind.CXX_FOR_RANGE_STMT)
-default_rules_db["MsAsmStatement"] = Rule(CursorKind.MS_ASM_STMT)
-default_rules_db["NullStatement"] = Rule(CursorKind.NULL_STMT)
-default_rules_db["DeclarationStatement"] = Rule(CursorKind.DECL_STMT)
-default_rules_db["TranslationUnit"] = Rule(CursorKind.TRANSLATION_UNIT)
-default_rules_db["UnexposedAttribute"] = Rule(CursorKind.UNEXPOSED_ATTR)
-default_rules_db["CxxFinalAttribute"] = Rule(CursorKind.CXX_FINAL_ATTR)
-default_rules_db["CxxOverrideAttribute"] = Rule(CursorKind.CXX_OVERRIDE_ATTR)
-default_rules_db["AnnotateAttribute"] = Rule(CursorKind.ANNOTATE_ATTR)
-default_rules_db["AsmLabelAttribute"] = Rule(CursorKind.ASM_LABEL_ATTR)
-default_rules_db["PackedAttribute"] = Rule(CursorKind.PACKED_ATTR)
-default_rules_db["PureAttribute"] = Rule(CursorKind.PURE_ATTR)
-default_rules_db["ConstAttribute"] = Rule(CursorKind.CONST_ATTR)
-default_rules_db["NoduplicateAttribute"] = Rule(CursorKind.NODUPLICATE_ATTR)
-default_rules_db["PreprocessingDirective"] = Rule(CursorKind.PREPROCESSING_DIRECTIVE)
-default_rules_db["MacroDefinition"] = Rule(CursorKind.MACRO_DEFINITION)
-default_rules_db["MacroInstantiation"] = Rule(CursorKind.MACRO_INSTANTIATION)
-default_rules_db["InclusionDirective"] = Rule(CursorKind.INCLUSION_DIRECTIVE)
+    "ClassTemplatePartialSpecialization", CursorKind.CLASS_TEMPLATE_PARTIAL_SPECIALIZATION)
+default_rules_db["NamespaceAlias"] = Rule("NamespaceAlias", CursorKind.NAMESPACE_ALIAS)
+default_rules_db["UsingDirective"] = Rule("UsingDirective", CursorKind.USING_DIRECTIVE)
+default_rules_db["UsingDeclaration"] = Rule("UsingDeclaration", CursorKind.USING_DECLARATION)
+default_rules_db["TypeAliasName"] = Rule("TypeAliasName", CursorKind.TYPE_ALIAS_DECL)
+default_rules_db["ClassAccessSpecifier"] = Rule(
+    "ClassAccessSpecifier", CursorKind.CXX_ACCESS_SPEC_DECL)
+default_rules_db["TypeReference"] = Rule("TypeReference", CursorKind.TYPE_REF)
+default_rules_db["CxxBaseSpecifier"] = Rule("CxxBaseSpecifier", CursorKind.CXX_BASE_SPECIFIER)
+default_rules_db["TemplateReference"] = Rule("TemplateReference", CursorKind.TEMPLATE_REF)
+default_rules_db["NamespaceReference"] = Rule("NamespaceReference", CursorKind.NAMESPACE_REF)
+default_rules_db["MemberReference"] = Rule("MemberReference", CursorKind.MEMBER_REF)
+default_rules_db["LabelReference"] = Rule("LabelReference", CursorKind.LABEL_REF)
+default_rules_db["OverloadedDeclarationReference"] = Rule(
+    "OverloadedDeclarationReference", CursorKind.OVERLOADED_DECL_REF)
+default_rules_db["VariableReference"] = Rule("VariableReference", CursorKind.VARIABLE_REF)
+default_rules_db["InvalidFile"] = Rule("InvalidFile", CursorKind.INVALID_FILE)
+default_rules_db["NoDeclarationFound"] = Rule("NoDeclarationFound", CursorKind.NO_DECL_FOUND)
+default_rules_db["NotImplemented"] = Rule("NotImplemented", CursorKind.NOT_IMPLEMENTED)
+default_rules_db["InvalidCode"] = Rule("InvalidCode", CursorKind.INVALID_CODE)
+default_rules_db["UnexposedExpression"] = Rule("UnexposedExpression", CursorKind.UNEXPOSED_EXPR)
+default_rules_db["DeclarationReferenceExpression"] = Rule(
+    "DeclarationReferenceExpression", CursorKind.DECL_REF_EXPR)
+default_rules_db["MemberReferenceExpression"] = Rule(
+    "MemberReferenceExpression", CursorKind.MEMBER_REF_EXPR)
+default_rules_db["CallExpression"] = Rule("CallExpression", CursorKind.CALL_EXPR)
+default_rules_db["BlockExpression"] = Rule("BlockExpression", CursorKind.BLOCK_EXPR)
+default_rules_db["IntegerLiteral"] = Rule("IntegerLiteral", CursorKind.INTEGER_LITERAL)
+default_rules_db["FloatingLiteral"] = Rule("FloatingLiteral", CursorKind.FLOATING_LITERAL)
+default_rules_db["ImaginaryLiteral"] = Rule("ImaginaryLiteral", CursorKind.IMAGINARY_LITERAL)
+default_rules_db["StringLiteral"] = Rule("StringLiteral", CursorKind.STRING_LITERAL)
+default_rules_db["CharacterLiteral"] = Rule("CharacterLiteral", CursorKind.CHARACTER_LITERAL)
+default_rules_db["ParenExpression"] = Rule("ParenExpression", CursorKind.PAREN_EXPR)
+default_rules_db["UnaryOperator"] = Rule("UnaryOperator", CursorKind.UNARY_OPERATOR)
+default_rules_db["ArraySubscriptExpression"] = Rule(
+    "ArraySubscriptExpression", CursorKind.ARRAY_SUBSCRIPT_EXPR)
+default_rules_db["BinaryOperator"] = Rule("BinaryOperator", CursorKind.BINARY_OPERATOR)
+default_rules_db["CompoundAssignmentOperator"] = Rule(
+    "CompoundAssignmentOperator", CursorKind.COMPOUND_ASSIGNMENT_OPERATOR)
+default_rules_db["ConditionalOperator"] = Rule(
+    "ConditionalOperator", CursorKind.CONDITIONAL_OPERATOR)
+default_rules_db["CstyleCastExpression"] = Rule(
+    "CstyleCastExpression", CursorKind.CSTYLE_CAST_EXPR)
+default_rules_db["CompoundLiteralExpression"] = Rule(
+    "CompoundLiteralExpression", CursorKind.COMPOUND_LITERAL_EXPR)
+default_rules_db["InitListExpression"] = Rule("InitListExpression", CursorKind.INIT_LIST_EXPR)
+default_rules_db["AddrLabelExpression"] = Rule("AddrLabelExpression", CursorKind.ADDR_LABEL_EXPR)
+default_rules_db["StatementExpression"] = Rule("StatementExpression", CursorKind.StmtExpr)
+default_rules_db["GenericSelectionExpression"] = Rule(
+    "GenericSelectionExpression", CursorKind.GENERIC_SELECTION_EXPR)
+default_rules_db["GnuNullExpression"] = Rule("GnuNullExpression", CursorKind.GNU_NULL_EXPR)
+default_rules_db["CxxStaticCastExpression"] = Rule(
+    "CxxStaticCastExpression", CursorKind.CXX_STATIC_CAST_EXPR)
+default_rules_db["CxxDynamicCastExpression"] = Rule(
+    "CxxDynamicCastExpression", CursorKind.CXX_DYNAMIC_CAST_EXPR)
+default_rules_db["CxxReinterpretCastExpression"] = Rule(
+    "CxxReinterpretCastExpression", CursorKind.CXX_REINTERPRET_CAST_EXPR)
+default_rules_db["CxxConstCastExpression"] = Rule(
+    "CxxConstCastExpression", CursorKind.CXX_CONST_CAST_EXPR)
+default_rules_db["CxxFunctionalCastExpression"] = Rule(
+    "CxxFunctionalCastExpression", CursorKind.CXX_FUNCTIONAL_CAST_EXPR)
+default_rules_db["CxxTypeidExpression"] = Rule("CxxTypeidExpression", CursorKind.CXX_TYPEID_EXPR)
+default_rules_db["CxxBoolLiteralExpression"] = Rule(
+    "CxxBoolLiteralExpression", CursorKind.CXX_BOOL_LITERAL_EXPR)
+default_rules_db["CxxNullPointerLiteralExpression"] = Rule(
+    "CxxNullPointerLiteralExpression", CursorKind.CXX_NULL_PTR_LITERAL_EXPR)
+default_rules_db["CxxThisExpression"] = Rule("CxxThisExpression", CursorKind.CXX_THIS_EXPR)
+default_rules_db["CxxThrowExpression"] = Rule("CxxThrowExpression", CursorKind.CXX_THROW_EXPR)
+default_rules_db["CxxNewExpression"] = Rule("CxxNewExpression", CursorKind.CXX_NEW_EXPR)
+default_rules_db["CxxDeleteExpression"] = Rule("CxxDeleteExpression", CursorKind.CXX_DELETE_EXPR)
+default_rules_db["CxxUnaryExpression"] = Rule("CxxUnaryExpression", CursorKind.CXX_UNARY_EXPR)
+default_rules_db["PackExpansionExpression"] = Rule(
+    "PackExpansionExpression", CursorKind.PACK_EXPANSION_EXPR)
+default_rules_db["SizeOfPackExpression"] = Rule(
+    "SizeOfPackExpression", CursorKind.SIZE_OF_PACK_EXPR)
+default_rules_db["LambdaExpression"] = Rule("LambdaExpression", CursorKind.LAMBDA_EXPR)
+default_rules_db["ObjectBoolLiteralExpression"] = Rule(
+    "ObjectBoolLiteralExpression", CursorKind.OBJ_BOOL_LITERAL_EXPR)
+default_rules_db["ObjectSelfExpression"] = Rule("ObjectSelfExpression", CursorKind.OBJ_SELF_EXPR)
+default_rules_db["UnexposedStatement"] = Rule("UnexposedStatement", CursorKind.UNEXPOSED_STMT)
+default_rules_db["LabelStatement"] = Rule("LabelStatement", CursorKind.LABEL_STMT)
+default_rules_db["CompoundStatement"] = Rule("CompoundStatement", CursorKind.COMPOUND_STMT)
+default_rules_db["CaseStatement"] = Rule("CaseStatement", CursorKind.CASE_STMT)
+default_rules_db["DefaultStatement"] = Rule("DefaultStatement", CursorKind.DEFAULT_STMT)
+default_rules_db["IfStatement"] = Rule("IfStatement", CursorKind.IF_STMT)
+default_rules_db["SwitchStatement"] = Rule("SwitchStatement", CursorKind.SWITCH_STMT)
+default_rules_db["WhileStatement"] = Rule("WhileStatement", CursorKind.WHILE_STMT)
+default_rules_db["DoStatement"] = Rule("DoStatement", CursorKind.DO_STMT)
+default_rules_db["ForStatement"] = Rule("ForStatement", CursorKind.FOR_STMT)
+default_rules_db["GotoStatement"] = Rule("GotoStatement", CursorKind.GOTO_STMT)
+default_rules_db["IndirectGotoStatement"] = Rule(
+    "IndirectGotoStatement", CursorKind.INDIRECT_GOTO_STMT)
+default_rules_db["ContinueStatement"] = Rule("ContinueStatement", CursorKind.CONTINUE_STMT)
+default_rules_db["BreakStatement"] = Rule("BreakStatement", CursorKind.BREAK_STMT)
+default_rules_db["ReturnStatement"] = Rule("ReturnStatement", CursorKind.RETURN_STMT)
+default_rules_db["AsmStatement"] = Rule("AsmStatement", CursorKind.ASM_STMT)
+default_rules_db["CxxCatchStatement"] = Rule("CxxCatchStatement", CursorKind.CXX_CATCH_STMT)
+default_rules_db["CxxTryStatement"] = Rule("CxxTryStatement", CursorKind.CXX_TRY_STMT)
+default_rules_db["CxxForRangeStatement"] = Rule(
+    "CxxForRangeStatement", CursorKind.CXX_FOR_RANGE_STMT)
+default_rules_db["MsAsmStatement"] = Rule("MsAsmStatement", CursorKind.MS_ASM_STMT)
+default_rules_db["NullStatement"] = Rule("NullStatement", CursorKind.NULL_STMT)
+default_rules_db["DeclarationStatement"] = Rule("DeclarationStatement", CursorKind.DECL_STMT)
+default_rules_db["TranslationUnit"] = Rule("TranslationUnit", CursorKind.TRANSLATION_UNIT)
+default_rules_db["UnexposedAttribute"] = Rule("UnexposedAttribute", CursorKind.UNEXPOSED_ATTR)
+default_rules_db["CxxFinalAttribute"] = Rule("CxxFinalAttribute", CursorKind.CXX_FINAL_ATTR)
+default_rules_db["CxxOverrideAttribute"] = Rule(
+    "CxxOverrideAttribute", CursorKind.CXX_OVERRIDE_ATTR)
+default_rules_db["AnnotateAttribute"] = Rule("AnnotateAttribute", CursorKind.ANNOTATE_ATTR)
+default_rules_db["AsmLabelAttribute"] = Rule("AsmLabelAttribute", CursorKind.ASM_LABEL_ATTR)
+default_rules_db["PackedAttribute"] = Rule("PackedAttribute", CursorKind.PACKED_ATTR)
+default_rules_db["PureAttribute"] = Rule("PureAttribute", CursorKind.PURE_ATTR)
+default_rules_db["ConstAttribute"] = Rule("ConstAttribute", CursorKind.CONST_ATTR)
+default_rules_db["NoduplicateAttribute"] = Rule(
+    "NoduplicateAttribute", CursorKind.NODUPLICATE_ATTR)
+default_rules_db["PreprocessingDirective"] = Rule(
+    "PreprocessingDirective", CursorKind.PREPROCESSING_DIRECTIVE)
+default_rules_db["MacroDefinition"] = Rule("MacroDefinition", CursorKind.MACRO_DEFINITION)
+default_rules_db["MacroInstantiation"] = Rule("MacroInstantiation", CursorKind.MACRO_INSTANTIATION)
+default_rules_db["InclusionDirective"] = Rule("InclusionDirective", CursorKind.INCLUSION_DIRECTIVE)
 
 
 # Reverse lookup map. The parse identifies Clang cursor kinds, which must be mapped
@@ -290,13 +322,13 @@ class RulesDb(object):
         with open(style_file) as stylefile:
             style_rules = yaml.safe_load(stylefile)
 
-        for (user_kind, pattern_str) in style_rules.items():
+        for (rule_name, pattern_str) in style_rules.items():
             try:
-                clang_kind = default_rules_db[user_kind].clang_kind
+                clang_kind = default_rules_db[rule_name].clang_kind
                 if clang_kind:
-                    self.__rule_db[user_kind] = default_rules_db[user_kind]
-                    self.__rule_db[user_kind].pattern_str = pattern_str
-                    self.__rule_db[user_kind].pattern = re.compile(pattern_str)
+                    self.__rule_db[rule_name] = default_rules_db[rule_name]
+                    self.__rule_db[rule_name].pattern_str = pattern_str
+                    self.__rule_db[rule_name].pattern = re.compile(pattern_str)
                     self.__clang_db[clang_kind] = clang_to_user_map[clang_kind]
 
             except KeyError as e:
@@ -308,7 +340,7 @@ class RulesDb(object):
                 sys.exit(1)
             except re.error as e:
                 sys.stderr.write('"{}" pattern {} has {} \n'.
-                                 format(user_kind, pattern_str, e.message))
+                                 format(rule_name, pattern_str, e.message))
                 sys.exit(1)
 
     def get_compile_commands(self, filename):
@@ -321,11 +353,15 @@ class RulesDb(object):
             return True
         return False
 
-    def get_user_kinds(self, kind):
+    def get_rule_names(self, kind):
+        """
+        Multiple user defined rules can be configured against one type of ClangKind
+        For e.g. ClassMemberVariable, StructMemberVariable are types of FIELD_DECL
+        """
         return self.__clang_db.get(kind)
 
-    def get_rule(self, user_kind):
-        return self.__rule_db.get(user_kind)
+    def get_rule(self, rule_name):
+        return self.__rule_db.get(rule_name)
 
 
 class Validator(object):
@@ -379,20 +415,20 @@ class Validator(object):
         if not self.rule_db.is_rule_enabled(node.kind):
             return 0
 
-        rule, user_kind = self.get_rule(node)
+        rule = self.get_rule(node)
         if rule and rule.evaluate(node) is False:
-            self.notify_error(node, rule, user_kind)
+            self.notify_error(node, rule)
             return 1
         return 0
 
     def get_rule(self, node):
-        user_kinds = self.rule_db.get_user_kinds(node.kind)
-        for kind in user_kinds:
-            rule = self.rule_db.get_rule(kind)
+        rule_names = self.rule_db.get_rule_names(node.kind)
+        for name in rule_names:
+            rule = self.rule_db.get_rule(name)
             if rule and rule.parent_kind == self.node_stack.peek():
-                return rule, kind
+                return rule
 
-        return self.rule_db.get_rule(user_kinds[0]), user_kinds[0]
+        return self.rule_db.get_rule(rule_names[0])
 
     def is_local(self, node, filename):
         """ Returns True is node belongs to the file being validated and not an include file """
@@ -400,10 +436,10 @@ class Validator(object):
             return True
         return False
 
-    def notify_error(self, node, rule, user_kind):
+    def notify_error(self, node, rule):
         fmt = '{}:{}:{}: "{}" does not match "{}" associated with {}\n'
         msg = fmt.format(node.location.file.name, node.location.line, node.location.column,
-                         node.displayname, rule.pattern_str, user_kind)
+                         node.displayname, rule.pattern_str, rule.name)
         sys.stderr.write(msg)
 
 
