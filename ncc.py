@@ -52,6 +52,11 @@ class Rule(object):
         self.includes = []
         self.excludes = []
 
+    def evaluate(self, node):
+        if not self.pattern.match(node.spelling):
+            return False
+        return True
+
 
 # All supported rules
 default_rules_db["StructName"] = Rule(CursorKind.STRUCT_DECL)
@@ -371,21 +376,21 @@ class Validator(object):
         get the node's rule and match the pattern. Report and error if pattern
         matching fails
         """
+        if not self.rule_db.is_rule_enabled(node.kind):
+            return 0
+
         rule, user_kind = self.get_rule(node)
-        if rule and (not rule.pattern.match(node.spelling)):
+        if rule and rule.evaluate(node) is False:
             self.notify_error(node, rule, user_kind)
             return 1
         return 0
 
     def get_rule(self, node):
-        if not self.rule_db.is_rule_enabled(node.kind):
-            return None, None
-
         user_kinds = self.rule_db.get_user_kinds(node.kind)
         for kind in user_kinds:
             rule = self.rule_db.get_rule(kind)
             if rule and rule.parent_kind == self.node_stack.peek():
-                    return rule, kind
+                return rule, kind
 
         return self.rule_db.get_rule(user_kinds[0]), user_kinds[0]
 
@@ -453,7 +458,6 @@ if __name__ == "__main__":
                     break
         else:
             sys.stderr.write("File '{}' not found!\n".format(path))
-
 
     if errors:
         print("Total number of errors = {}".format(errors))
