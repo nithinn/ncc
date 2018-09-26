@@ -59,20 +59,141 @@ class Rule(object):
         return True
 
 
+class ScopePrefixRule(object):
+    def __init__(self, pattern_obj):
+        self.name = "ScopePrefixRule"
+        self.rule_names = {"Global": 1, "Static": 1, "ClassMember": 1}
+        self.global_prefix = ""
+        self.static_prefix = ""
+        self.class_member_prefix = ""
+
+        try:
+            for key, value in pattern_obj.iteritems():
+                if key == "Global":
+                    self.global_prefix = value
+                elif key == "Static":
+                    self.static_prefix = value
+                elif key == "ClassMember":
+                    self.class_member_prefix = value
+                else:
+                    raise ValueError(key)
+        except ValueError as e:
+            sys.stderr.write('{} is not a valid rule name\n'.format(e.message))
+            fixit = difflib.get_close_matches(e.message, self.rule_names, n=1, cutoff=0.8)
+            if fixit:
+                sys.stderr.write('Did you mean rule name: {} ?\n'.format(fixit[0]))
+            sys.exit(1)
+
+    def evaluate(self, node, scope):
+        if scope == "Global":
+            length = len(self.global_prefix)
+            if node.spelling[:length] != self.global_prefix:
+                return False
+
+        if scope == "Static":
+            length = len(self.static_prefix)
+            if node.spelling[:length] != self.static_prefix:
+                return False
+
+        if scope == "ClassMember":
+            length = len(self.static_prefix)
+            if node.spelling[:length] != self.class_member_prefix:
+                return False
+
+
+class DataTypePrefixRule(object):
+    def __init__(self, pattern_obj):
+        self.name = "DataTypePrefix"
+        self.rule_names = ["String", "Integer", "Bool", "Pointer"]
+        self.string_prefix = ""
+
+        try:
+            for key, value in pattern_obj.iteritems():
+                if key == "String":
+                    self.string_prefix = value
+                elif key == "Integer":
+                    self.integer_prefix = value
+                elif key == "Bool":
+                    self.bool_prefix = value
+                elif key == "Pointer":
+                    self.bool_prefix = value
+                else:
+                    raise ValueError(key)
+        except ValueError as e:
+            sys.stderr.write('{} is not a valid rule name\n'.format(e.message))
+            fixit = difflib.get_close_matches(e.message, self.rule_names, n=1, cutoff=0.8)
+            if fixit:
+                sys.stderr.write('Did you mean rule name: {} ?\n'.format(fixit[0]))
+            sys.exit(1)
+
+    def evaluate(self, node, scope):
+        if scope == "String":
+            length = len(self.string_prefix)
+            if node.spelling[:length] != self.string_prefix:
+                return False
+
+        if scope == "Integer":
+            length = len(self.integer_prefix)
+            if node.spelling[:length] != self.integer_prefix:
+                return False
+
+        if scope == "Bool":
+            length = len(self.bool_prefix)
+            if node.spelling[:length] != self.bool_prefix:
+                return False
+
+        if scope == "Pointer":
+            length = len(self.pointer_prefix)
+            if node.spelling[:length] != self.pointer_prefix:
+                return False
+
+
+class VariableNameRule(object):
+    def __init__(self, pattern_obj=None):
+        self.name = "VariableName"
+        self.pattern_str = "^.*$"
+        self.pattern = re.compile(self.pattern_str)
+        self.rule_names = ["ScopePrefix", "DataTypePrefix", "Pattern"]
+        self.scope_prefix_rule = None
+        self.datatype_prefix_rule = None
+
+        try:
+            for key, value in pattern_obj.iteritems():
+                if key == "ScopePrefix":
+                    self.scope_prefix_rule = ScopePrefixRule(value)
+                elif key == "DataTypePrefix":
+                    self.datatype_prefix_rule = DataTypePrefixRule(value)
+                elif key == "Pattern":
+                    self.pattern_str = value
+                    self.pattern = re.compile(value)
+                else:
+                    raise ValueError(key)
+        except ValueError as e:
+            sys.stderr.write('{} is not a valid rule name\n'.format(e.message))
+            fixit = difflib.get_close_matches(e.message, self.rule_names, n=1, cutoff=0.8)
+            if fixit:
+                sys.stderr.write('Did you mean rule name: {} ?\n'.format(fixit[0]))
+            sys.exit(1)
+        except re.error as e:
+            sys.stderr.write('{} is not a valid pattern \n'.format(e.message))
+            sys.exit(1)
+
+    def evaluate(self, node, scope):
+        """
+        Variable name is formed by [scope-prefix][data-type-prefix][pattern]
+        """
+        if not self.pattern.match(node.spelling):
+            return False
+        return True
+
+
 # All supported rules
 default_rules_db["StructName"] = Rule("StructName", CursorKind.STRUCT_DECL)
 default_rules_db["UnionName"] = Rule("UnionName", CursorKind.UNION_DECL)
 default_rules_db["ClassName"] = Rule("ClassName", CursorKind.CLASS_DECL)
 default_rules_db["EnumName"] = Rule("EnumName", CursorKind.ENUM_DECL)
-default_rules_db["ClassMemberVariable"] = Rule(
-    "ClassMemberVariable", CursorKind.FIELD_DECL, CursorKind.CLASS_DECL)
-default_rules_db["StructMemberVariable"] = Rule(
-    "StructMemberVariable", CursorKind.FIELD_DECL, CursorKind.STRUCT_DECL)
-default_rules_db["UnionMemberVariable"] = Rule(
-    "UnionMemberVariable", CursorKind.FIELD_DECL, CursorKind.UNION_DECL)
 default_rules_db["EnumConstantName"] = Rule("EnumConstantName", CursorKind.ENUM_CONSTANT_DECL)
 default_rules_db["FunctionName"] = Rule("FunctionName", CursorKind.FUNCTION_DECL)
-default_rules_db["VariableName"] = Rule("VariableName", CursorKind.VAR_DECL)
 default_rules_db["ParameterName"] = Rule("ParameterName", CursorKind.PARM_DECL)
 default_rules_db["TypedefName"] = Rule("TypedefName", CursorKind.TYPEDEF_DECL)
 default_rules_db["CppMethod"] = Rule("CppMethod", CursorKind.CXX_METHOD)
@@ -207,6 +328,14 @@ default_rules_db["PreprocessingDirective"] = Rule(
 default_rules_db["MacroDefinition"] = Rule("MacroDefinition", CursorKind.MACRO_DEFINITION)
 default_rules_db["MacroInstantiation"] = Rule("MacroInstantiation", CursorKind.MACRO_INSTANTIATION)
 default_rules_db["InclusionDirective"] = Rule("InclusionDirective", CursorKind.INCLUSION_DIRECTIVE)
+default_rules_db["VariableName"] = Rule("VariableName", CursorKind.VAR_DECL)
+default_rules_db["ClassMemberVariable"] = Rule(
+    "ClassMemberVariable", CursorKind.FIELD_DECL, CursorKind.CLASS_DECL)
+default_rules_db["StructMemberVariable"] = Rule(
+    "StructMemberVariable", CursorKind.FIELD_DECL, CursorKind.STRUCT_DECL)
+default_rules_db["UnionMemberVariable"] = Rule(
+    "UnionMemberVariable", CursorKind.FIELD_DECL, CursorKind.UNION_DECL)
+default_rules_db["NewVariableName"] = Rule("NewVariableName", CursorKind.VAR_DECL)
 
 
 # Reverse lookup map. The parse identifies Clang cursor kinds, which must be mapped
@@ -326,17 +455,20 @@ class RulesDb(object):
             try:
                 clang_kind = default_rules_db[rule_name].clang_kind
                 if clang_kind:
-                    self.__rule_db[rule_name] = default_rules_db[rule_name]
-                    self.__rule_db[rule_name].pattern_str = pattern_str
-                    self.__rule_db[rule_name].pattern = re.compile(pattern_str)
-                    self.__clang_db[clang_kind] = clang_to_user_map[clang_kind]
+                    if rule_name == "NewVariableName":
+                        self.__rule_db[rule_name] = VariableNameRule(pattern_str)
+                    else:
+                        self.__rule_db[rule_name] = default_rules_db[rule_name]
+                        self.__rule_db[rule_name].pattern_str = pattern_str
+                        self.__rule_db[rule_name].pattern = re.compile(pattern_str)
+                        self.__clang_db[clang_kind] = clang_to_user_map[clang_kind]
 
             except KeyError as e:
                 sys.stderr.write('{} is not a valid C/C++ construct name\n'.format(e.message))
                 fixit = difflib.get_close_matches(e.message, default_rules_db.keys(),
                                                   n=1, cutoff=0.8)
                 if fixit:
-                    sys.stderr.write('Did you mean CursorKind: {} ?\n'.format(fixit[0]))
+                    sys.stderr.write('Did you mean rule name: {} ?\n'.format(fixit[0]))
                 sys.exit(1)
             except re.error as e:
                 sys.stderr.write('"{}" pattern {} has {} \n'.
