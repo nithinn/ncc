@@ -30,15 +30,15 @@ import sys
 import difflib
 import os
 import fnmatch
-from collections import defaultdict
 from clang.cindex import Index
 from clang.cindex import CompilationDatabase
 from clang.cindex import CursorKind
+from clang.cindex import StorageClass
 
 
 # Clang cursor kind to ncc Defined cursor map
 default_rules_db = {}
-clang_to_user_map = defaultdict(list)
+clang_to_user_map = {}
 special_kind = {CursorKind.STRUCT_DECL: 1, CursorKind.CLASS_DECL: 1}
 file_extensions = [".c", ".cpp", ".h", ".hpp"]
 
@@ -53,7 +53,7 @@ class Rule(object):
         self.includes = []
         self.excludes = []
 
-    def evaluate(self, node):
+    def evaluate(self, node, scope=None):
         if not self.pattern.match(node.spelling):
             return False
         return True
@@ -84,21 +84,24 @@ class ScopePrefixRule(object):
                 sys.stderr.write('Did you mean rule name: {} ?\n'.format(fixit[0]))
             sys.exit(1)
 
-    def evaluate(self, node, scope):
+    def evaluate(self, spelling, scope=None):
         if scope == "Global":
             length = len(self.global_prefix)
-            if node.spelling[:length] != self.global_prefix:
-                return False
+            if not spelling.startswith(self.global_prefix):
+                return False, spelling
+            return True, spelling[length:]
 
         if scope == "Static":
             length = len(self.static_prefix)
-            if node.spelling[:length] != self.static_prefix:
-                return False
+            if not spelling.startswith(self.static_prefix):
+                return False, spelling
+            return True, spelling[length:]
 
         if scope == "ClassMember":
             length = len(self.static_prefix)
-            if node.spelling[:length] != self.class_member_prefix:
-                return False
+            if spelling[:length] != self.class_member_prefix:
+                return False, spelling
+            return True, spelling[length:]
 
 
 class DataTypePrefixRule(object):
@@ -126,26 +129,30 @@ class DataTypePrefixRule(object):
                 sys.stderr.write('Did you mean rule name: {} ?\n'.format(fixit[0]))
             sys.exit(1)
 
-    def evaluate(self, node, scope):
+    def evaluate(self, spelling, scope=None):
         if scope == "String":
             length = len(self.string_prefix)
-            if node.spelling[:length] != self.string_prefix:
-                return False
+            if spelling[:length] != self.string_prefix:
+                return False, spelling
+            return True, spelling[length:]
 
         if scope == "Integer":
             length = len(self.integer_prefix)
-            if node.spelling[:length] != self.integer_prefix:
-                return False
+            if spelling[:length] != self.integer_prefix:
+                return False, spelling
+            return True, spelling[length:]
 
         if scope == "Bool":
             length = len(self.bool_prefix)
-            if node.spelling[:length] != self.bool_prefix:
-                return False
+            if spelling[:length] != self.bool_prefix:
+                return False, spelling
+            return True, spelling[length:]
 
         if scope == "Pointer":
             length = len(self.pointer_prefix)
-            if node.spelling[:length] != self.pointer_prefix:
-                return False
+            if spelling[:length] != self.pointer_prefix:
+                return False, spelling
+            return True, spelling[length:]
 
 
 class VariableNameRule(object):
@@ -178,13 +185,42 @@ class VariableNameRule(object):
             sys.stderr.write('{} is not a valid pattern \n'.format(e.message))
             sys.exit(1)
 
-    def evaluate(self, node, scope):
+    def evaluate(self, node, scope=None):
         """
         Variable name is formed by [scope-prefix][data-type-prefix][pattern]
         """
-        if not self.pattern.match(node.spelling):
-            return False
-        return True
+        errors = 0
+        spelling = node.spelling
+        if self.scope_prefix_rule:
+            if node.storage_class == StorageClass.STATIC:
+                e, spelling = self.scope_prefix_rule.evaluate(spelling, "Static")
+                if e is False:
+                    self.notify_error(node, self.scope_prefix_rule.static_prefix)
+                    errors += 1
+
+            if (scope is None) and (node.storage_class == StorageClass.EXTERN or
+                                      node.storage_class == StorageClass.NONE):
+                e, spelling = self.scope_prefix_rule.evaluate(spelling, "Global")
+                if e is False:
+                    self.notify_error(node, self.scope_prefix_rule.global_prefix)
+                    errors += 1
+
+            if (scope is CursorKind.CLASS_DECL):
+                e, spelling = self.scope_prefix_rule.evaluate(spelling, "ClassMember")
+                if e is False:
+                    self.notify_error(node, self.scope_prefix_rule.class_member_prefix)
+                    errors += 1
+
+        if not self.pattern.match(spelling):
+            errors += 1
+
+        return errors
+
+    def notify_error(self, node, prefix):
+        fmt = '{}:{}:{}: "{}" does not have the scope prefix {}\n'
+        msg = fmt.format(node.location.file.name, node.location.line, node.location.column,
+                         node.displayname, prefix)
+        sys.stderr.write(msg)
 
 
 # All supported rules
@@ -328,20 +364,20 @@ default_rules_db["PreprocessingDirective"] = Rule(
 default_rules_db["MacroDefinition"] = Rule("MacroDefinition", CursorKind.MACRO_DEFINITION)
 default_rules_db["MacroInstantiation"] = Rule("MacroInstantiation", CursorKind.MACRO_INSTANTIATION)
 default_rules_db["InclusionDirective"] = Rule("InclusionDirective", CursorKind.INCLUSION_DIRECTIVE)
-default_rules_db["VariableName"] = Rule("VariableName", CursorKind.VAR_DECL)
-default_rules_db["ClassMemberVariable"] = Rule(
-    "ClassMemberVariable", CursorKind.FIELD_DECL, CursorKind.CLASS_DECL)
-default_rules_db["StructMemberVariable"] = Rule(
-    "StructMemberVariable", CursorKind.FIELD_DECL, CursorKind.STRUCT_DECL)
-default_rules_db["UnionMemberVariable"] = Rule(
-    "UnionMemberVariable", CursorKind.FIELD_DECL, CursorKind.UNION_DECL)
-default_rules_db["NewVariableName"] = Rule("NewVariableName", CursorKind.VAR_DECL)
-
+# default_rules_db["ClassMemberVariable"] = Rule(
+#     "ClassMemberVariable", CursorKind.FIELD_DECL, CursorKind.CLASS_DECL)
+# default_rules_db["StructMemberVariable"] = Rule(
+#     "StructMemberVariable", CursorKind.FIELD_DECL, CursorKind.STRUCT_DECL)
+# default_rules_db["UnionMemberVariable"] = Rule(
+#     "UnionMemberVariable", CursorKind.FIELD_DECL, CursorKind.UNION_DECL)
 
 # Reverse lookup map. The parse identifies Clang cursor kinds, which must be mapped
 # to user defined types
 for key, value in default_rules_db.iteritems():
-    clang_to_user_map[value.clang_kind].append(key)
+    clang_to_user_map[value.clang_kind] = key
+default_rules_db["VariableName"] = Rule("VariableName", CursorKind.VAR_DECL)
+clang_to_user_map[CursorKind.FIELD_DECL] = "VariableName"
+clang_to_user_map[CursorKind.VAR_DECL] = "VariableName"
 
 
 class AstNodeStack(object):
@@ -455,13 +491,15 @@ class RulesDb(object):
             try:
                 clang_kind = default_rules_db[rule_name].clang_kind
                 if clang_kind:
-                    if rule_name == "NewVariableName":
+                    if rule_name == "VariableName":
                         self.__rule_db[rule_name] = VariableNameRule(pattern_str)
+                        self.__clang_db[CursorKind.FIELD_DECL] = rule_name
+                        self.__clang_db[CursorKind.VAR_DECL] = rule_name
                     else:
                         self.__rule_db[rule_name] = default_rules_db[rule_name]
                         self.__rule_db[rule_name].pattern_str = pattern_str
                         self.__rule_db[rule_name].pattern = re.compile(pattern_str)
-                        self.__clang_db[clang_kind] = clang_to_user_map[clang_kind]
+                        self.__clang_db[clang_kind] = rule_name
 
             except KeyError as e:
                 sys.stderr.write('{} is not a valid C/C++ construct name\n'.format(e.message))
@@ -528,7 +566,7 @@ class Validator(object):
                         child.kind == CursorKind.STRUCT_DECL):
                     return 0
 
-                errors += self.match_pattern(child)
+                errors += self.evaluate(child)
 
                 # Members struct, class, and unions must be treated differently.
                 # So parent ast node information is pushed in to the stack.
@@ -539,7 +577,7 @@ class Validator(object):
 
         return errors
 
-    def match_pattern(self, node):
+    def evaluate(self, node):
         """
         get the node's rule and match the pattern. Report and error if pattern
         matching fails
@@ -547,20 +585,12 @@ class Validator(object):
         if not self.rule_db.is_rule_enabled(node.kind):
             return 0
 
-        rule = self.get_rule(node)
-        if rule and rule.evaluate(node) is False:
+        rule_name = self.rule_db.get_rule_names(node.kind)
+        rule = self.rule_db.get_rule(rule_name)
+        if rule.evaluate(node, self.node_stack.peek()) is False:
             self.notify_error(node, rule)
             return 1
         return 0
-
-    def get_rule(self, node):
-        rule_names = self.rule_db.get_rule_names(node.kind)
-        for name in rule_names:
-            rule = self.rule_db.get_rule(name)
-            if rule and rule.parent_kind == self.node_stack.peek():
-                return rule
-
-        return self.rule_db.get_rule(rule_names[0])
 
     def is_local(self, node, filename):
         """ Returns True is node belongs to the file being validated and not an include file """

@@ -28,8 +28,15 @@ private:
     int b;
 };
 
+int g_abc = 0;
+int abc = 0;
+
+static int s_abc = 0;
+
 int main(int argc, const char *argv[])
 {
+    int b = 0;
+
     if (true)
     {
         int a = 10;
