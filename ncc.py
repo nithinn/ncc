@@ -34,6 +34,7 @@ from clang.cindex import Index
 from clang.cindex import CompilationDatabase
 from clang.cindex import CursorKind
 from clang.cindex import StorageClass
+from clang.cindex import TypeKind
 
 
 # Clang cursor kind to ncc Defined cursor map
@@ -119,7 +120,7 @@ class DataTypePrefixRule(object):
                 elif key == "Bool":
                     self.bool_prefix = value
                 elif key == "Pointer":
-                    self.bool_prefix = value
+                    self.pointer_prefix = value
                 else:
                     raise ValueError(key)
         except ValueError as e:
@@ -158,8 +159,7 @@ class DataTypePrefixRule(object):
 class VariableNameRule(object):
     def __init__(self, pattern_obj=None):
         self.name = "VariableName"
-        self.pattern_str = "^.*$"
-        self.pattern = re.compile(self.pattern_str)
+        self.pattern_str = ".*"
         self.rule_names = ["ScopePrefix", "DataTypePrefix", "Pattern"]
         self.scope_prefix_rule = None
         self.datatype_prefix_rule = None
@@ -171,8 +171,12 @@ class VariableNameRule(object):
                 elif key == "DataTypePrefix":
                     self.datatype_prefix_rule = DataTypePrefixRule(value)
                 elif key == "Pattern":
-                    self.pattern_str = value
-                    self.pattern = re.compile(value)
+                    # Remove the ^ and $ part of the string from beginning and end
+                    # of the pattern
+                    if value.startswith('^'):
+                        self.pattern_str = value[1:]
+                    if value.endswith('$'):
+                        self.pattern_str = self.pattern_str[:-1]
                 else:
                     raise ValueError(key)
         except ValueError as e:
@@ -185,12 +189,8 @@ class VariableNameRule(object):
             sys.stderr.write('{} is not a valid pattern \n'.format(e.message))
             sys.exit(1)
 
-    def evaluate(self, node, scope=None):
-        """
-        Variable name is formed by [scope-prefix][data-type-prefix][pattern]
-        """
+    def evaluate_scope_prefix(self, node, spelling, scope=None):
         errors = 0
-        spelling = node.spelling
         if self.scope_prefix_rule:
             if node.storage_class == StorageClass.STATIC:
                 e, spelling = self.scope_prefix_rule.evaluate(spelling, "Static")
@@ -198,20 +198,55 @@ class VariableNameRule(object):
                     self.notify_error(node, self.scope_prefix_rule.static_prefix)
                     errors += 1
 
-            if (scope is None) and (node.storage_class == StorageClass.EXTERN or
+            elif (scope is None) and (node.storage_class == StorageClass.EXTERN or
                                       node.storage_class == StorageClass.NONE):
                 e, spelling = self.scope_prefix_rule.evaluate(spelling, "Global")
                 if e is False:
                     self.notify_error(node, self.scope_prefix_rule.global_prefix)
                     errors += 1
 
-            if (scope is CursorKind.CLASS_DECL):
+            elif (scope is CursorKind.CLASS_DECL):
                 e, spelling = self.scope_prefix_rule.evaluate(spelling, "ClassMember")
                 if e is False:
                     self.notify_error(node, self.scope_prefix_rule.class_member_prefix)
                     errors += 1
 
-        if not self.pattern.match(spelling):
+        return errors, spelling
+
+    def get_scope_prefix(self, node, scope=None):
+        if node.storage_class == StorageClass.STATIC:
+            return self.scope_prefix_rule.static_prefix
+        elif (scope is None) and (node.storage_class == StorageClass.EXTERN or
+                                  node.storage_class == StorageClass.NONE):
+            return self.scope_prefix_rule.global_prefix
+        elif (scope is CursorKind.CLASS_DECL):
+            return self.scope_prefix_rule.class_member_prefix
+        return ""
+
+    def get_datatype_prefix(self, node):
+        if node.type.spelling == "int":
+            return self.datatype_prefix_rule.integer_prefix
+        elif "::string" in node.type.spelling:
+            return self.datatype_prefix_rule.string_prefix
+        elif "std::unique_ptr" in node.type.spelling:
+            return self.datatype_prefix_rule.pointer_prefix
+        elif "bool" in node.type.spelling:
+            return self.datatype_prefix_rule.bool_prefix
+        return ""
+
+    def evaluate(self, node, scope=None):
+        pattern_str = ""
+        pattern_str += self.get_scope_prefix(node, scope)
+        pattern_str += self.get_datatype_prefix(node)
+        pattern_str += self.pattern_str
+        errors = 0
+
+        pattern = re.compile(pattern_str)
+        if not pattern.match(node.spelling):
+            fmt = '{}:{}:{}: "{}" does not have the pattern {}\n'
+            msg = fmt.format(node.location.file.name, node.location.line, node.location.column,
+                             node.displayname, pattern_str)
+            sys.stderr.write(msg)
             errors += 1
 
         return errors

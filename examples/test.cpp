@@ -10,7 +10,7 @@ typedef A aTypeDef;
 typedef struct C
 {
     int a;
-    int m_b;
+    int m_vB;
 } ccc;
 
 class B
