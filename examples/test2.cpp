@@ -1,5 +1,7 @@
+#include <test3.h>
+
 #include <iostream>
-#include <string>
+#include <unordered_map>
 #include <memory>
 
 class testaaa;
@@ -10,6 +12,8 @@ class testaaa;
  */
 std::string s;
 std::string g_strA;
+
+int*  ppp;
 
 using namespace std;
 string aa;
@@ -23,13 +27,17 @@ private:
     string b;
 };
 
-testaaa AA;
+//testaaa AA;
 
 std::unique_ptr<test2> bbbb;
 
+std::uint32_t uuu;
+
+std::unordered_map<std::string, test2> abc;
+std::unordered_map<std::string, test3> abcd;
+
 int main(int argc, const char *argv[])
 {
-    int b;
     bool aaaaaa;
     return 0;
 }
