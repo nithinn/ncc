@@ -181,19 +181,13 @@ class VariableNameRule(object):
 
         pattern = re.compile(pattern_str)
         if not pattern.match(node.spelling):
-            fmt = '{}:{}:{}: "{}" does not have the pattern {}\n'
+            fmt = '{}:{}:{}: "{}" does not have the pattern {} associated with Variable name\n'
             msg = fmt.format(node.location.file.name, node.location.line, node.location.column,
                              node.displayname, pattern_str)
             sys.stderr.write(msg)
             return False
 
         return True
-
-    def notify_error(self, node, prefix):
-        fmt = '{}:{}:{}: "{}" does not have the scope prefix {}\n'
-        msg = fmt.format(node.location.file.name, node.location.line, node.location.column,
-                         node.displayname, prefix)
-        sys.stderr.write(msg)
 
 
 # All supported rules

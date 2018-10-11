@@ -33,11 +33,19 @@ Style for c/c++ constructs are defined by regular expresssions. For e.g the belo
 a struct can have any character, a class name should begin with 'C', and a class member variable
 should begin with m_, and a function name should begin with uppercase alphabet
 
-    StructName: '^.*$'
-    ClassName: '^C.*$'
-    ClassMemberVariable: '^m_.*$'
-    FunctionName: '^[A-Z].*$'
-    Namespace: '^.*$'
+    ClassName: 'C.*'
+    CppMethod: '[A-Z].*'
+    VariableName:
+        ScopePrefix:
+            Global: 'g_'
+            Static: 's_'
+            ClassMember: 'm_'
+        DataTypePrefix:
+            String: 'str'
+            Pointer: 'p'
+            Integer: 'n'
+            Bool: 'b'
+        Pattern: '^.*$'
 
 ## Example Usage
 
