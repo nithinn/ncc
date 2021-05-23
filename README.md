@@ -9,22 +9,32 @@ projects that want to enforce a coding standard.
 
 ## Requirements
 
-* python2
-* python-clang
-* python-yaml
+The following packages are pre-requisites for ncc tool. Note that, the python 'clang'
+provides libclang python bindings. The clang version should match the libclang.so version on your system
+
+* clang
+* yaml
+
+```python
+pip install clang
+pip install pyyaml
+```
 
 ## Usage
 
-    ncc.py [--help] [--recurse] [--style STYLE_FILE] [--cdbdir CDBDIR] [--dump]
-           [--output OUTPUT] [--filetype FILETYPE] [--exclude EXCLUDE [EXCLUDE ...]]
-           [--path PATH [PATH ...]]
+```python
+ncc.py [--help] [--recurse] [--style STYLE_FILE] [--cdbdir CDBDIR] [--dump]
+       [--output OUTPUT] [--filetype FILETYPE] [--exclude EXCLUDE [EXCLUDE ...]]
+       [--path PATH [PATH ...]]
+```
 
 For detailed description of all options:
 
-    ncc.py --help
+```python
+ncc.py --help
+```
 
 To print all rules:
-    
     ncc.py --dump
 
 ## Style Defintion
