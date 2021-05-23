@@ -73,7 +73,7 @@ class ScopePrefixRule(object):
         self.struct_member_prefix = ""
 
         try:
-            for key, value in pattern_obj.iteritems():
+            for key, value in pattern_obj.items():
                 if key == "Global":
                     self.global_prefix = value
                 elif key == "Static":
@@ -99,7 +99,7 @@ class DataTypePrefixRule(object):
         self.string_prefix = ""
 
         try:
-            for key, value in pattern_obj.iteritems():
+            for key, value in pattern_obj.items():
                 if key == "String":
                     self.string_prefix = value
                 elif key == "Integer":
@@ -127,7 +127,7 @@ class VariableNameRule(object):
         self.datatype_prefix_rule = None
 
         try:
-            for key, value in pattern_obj.iteritems():
+            for key, value in pattern_obj.items():
                 if key == "ScopePrefix":
                     self.scope_prefix_rule = ScopePrefixRule(value)
                 elif key == "DataTypePrefix":
@@ -334,7 +334,7 @@ default_rules_db["InclusionDirective"] = Rule("InclusionDirective", CursorKind.I
 
 # Reverse lookup map. The parse identifies Clang cursor kinds, which must be mapped
 # to user defined types
-for key, value in default_rules_db.iteritems():
+for key, value in default_rules_db.items():
     clang_to_user_map[value.clang_kind] = key
 default_rules_db["VariableName"] = Rule("VariableName", CursorKind.VAR_DECL)
 clang_to_user_map[CursorKind.FIELD_DECL] = "VariableName"
@@ -418,7 +418,7 @@ class Options:
         print("----------------------------------------------------------")
         print("{:<35} | {}".format("Rule Name", "Pattern"))
         print("----------------------------------------------------------")
-        for (key, value) in default_rules_db.iteritems():
+        for (key, value) in default_rules_db.items():
             print("{:<35} : {}".format(key, value.pattern_str))
 
 
