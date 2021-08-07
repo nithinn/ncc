@@ -29,7 +29,8 @@ On Microsoft Windows install install 32 bit version of LLVM compiler tool chain.
 ```python
 ncc.py [--help] [--recurse] [--style STYLE_FILE] [--cdbdir CDBDIR] [--dump]
        [--output OUTPUT] [--filetype FILETYPE] [--exclude EXCLUDE [EXCLUDE ...]]
-       [--path PATH [PATH ...]]
+       [--path PATH [PATH ...]] [--include INCLUDE [INCLUDE ...]]
+       [--definition DEFINITION [DEFINITION ...]] [--clang-lib CLANG_LIB]
 ```
 
 For detailed description of all options:
