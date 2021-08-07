@@ -332,6 +332,8 @@ default_rules_db["PreprocessingDirective"] = Rule(
 default_rules_db["MacroDefinition"] = Rule("MacroDefinition", CursorKind.MACRO_DEFINITION)
 default_rules_db["MacroInstantiation"] = Rule("MacroInstantiation", CursorKind.MACRO_INSTANTIATION)
 default_rules_db["InclusionDirective"] = Rule("InclusionDirective", CursorKind.INCLUSION_DIRECTIVE)
+default_rules_db["TypeAliasTeplateDeclaration"] = Rule(
+    "TypeAliasTeplateDeclaration", CursorKind.TYPE_ALIAS_TEMPLATE_DECL)
 
 # Reverse lookup map. The parse identifies Clang cursor kinds, which must be mapped
 # to user defined types
@@ -586,7 +588,7 @@ if __name__ == "__main__":
     op.parse_cmd_line()
 
     if op.args.path is None:
-        sys.exit(0)
+        sys.exit(1)
 
     if op.args.clang_lib:
         Config.set_library_file(op.args.clang_lib)
@@ -613,6 +615,8 @@ if __name__ == "__main__":
                     break
         else:
             sys.stderr.write("File '{}' not found!\n".format(path))
+            sys.exit(1)
 
     if errors:
         print("Total number of errors = {}".format(errors))
+        sys.exit(1)

@@ -40,7 +40,9 @@ ncc.py --help
 ```
 
 To print all rules:
+```python
     ncc.py --dump
+```
 
 ## Style Defintion
 
