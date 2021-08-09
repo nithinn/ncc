@@ -34,6 +34,7 @@ from clang.cindex import Index
 from clang.cindex import CursorKind
 from clang.cindex import StorageClass
 from clang.cindex import TypeKind
+from clang.cindex import Config
 
 
 # Clang cursor kind to ncc Defined cursor map
@@ -331,6 +332,8 @@ default_rules_db["PreprocessingDirective"] = Rule(
 default_rules_db["MacroDefinition"] = Rule("MacroDefinition", CursorKind.MACRO_DEFINITION)
 default_rules_db["MacroInstantiation"] = Rule("MacroInstantiation", CursorKind.MACRO_INSTANTIATION)
 default_rules_db["InclusionDirective"] = Rule("InclusionDirective", CursorKind.INCLUSION_DIRECTIVE)
+default_rules_db["TypeAliasTeplateDeclaration"] = Rule(
+    "TypeAliasTeplateDeclaration", CursorKind.TYPE_ALIAS_TEMPLATE_DECL)
 
 # Reverse lookup map. The parse identifies Clang cursor kinds, which must be mapped
 # to user defined types
@@ -382,6 +385,9 @@ class Options:
         self.parser.add_argument('--include', dest='include', nargs="+", help="User defined "
                                  "header file path, this is same as -I argument to the compiler")
 
+        self.parser.add_argument('--definition', dest='definition', nargs="+", help="User specified "
+                                 "definitions, this is same as -D argument to the compiler")
+
         self.parser.add_argument('--dump', dest='dump', action='store_true',
                                  help="Dump all available options")
 
@@ -390,6 +396,9 @@ class Options:
 
         self.parser.add_argument('--filetype', dest='filetype', help="File extentions type"
                                  "that are applicable for naming convection validation")
+
+        self.parser.add_argument('--clang-lib', dest='clang_lib',
+                                 help="Custom location of clang library")
 
         self.parser.add_argument('--exclude', dest='exclude', nargs="+", help="Skip files "
                                  "matching the pattern specified from recursive searches. It "
@@ -491,6 +500,10 @@ class Validator(object):
         args.append('-x')
         args.append('c++')
         args.append('-D_GLIBCXX_USE_CXX11_ABI=0')
+        if self.options.args.definition:
+            for item in self.options.args.definition:
+                defintion = r'-D' + item
+                args.append(defintion)
         if self.options.args.include:
             for item in self.options.args.include:
                 inc = r'-I' + item
@@ -575,7 +588,10 @@ if __name__ == "__main__":
     op.parse_cmd_line()
 
     if op.args.path is None:
-        sys.exit(0)
+        sys.exit(1)
+
+    if op.args.clang_lib:
+        Config.set_library_file(op.args.clang_lib)
 
     """ Creating the rules database """
     rules_db = RulesDb(op._style_file)
@@ -599,6 +615,8 @@ if __name__ == "__main__":
                     break
         else:
             sys.stderr.write("File '{}' not found!\n".format(path))
+            sys.exit(1)
 
     if errors:
         print("Total number of errors = {}".format(errors))
+        sys.exit(1)
