@@ -1,0 +1,2 @@
+StringExampleToIgnore: 'This string will be ignored by NCC, this comment is the user giving explanation as to why this special case is skipped'
+g_abc: 'Ignored as test example of the skip file functionality'
