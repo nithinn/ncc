@@ -32,6 +32,7 @@ import os
 import fnmatch
 from clang.cindex import Index
 from clang.cindex import CursorKind
+from clang.cindex import AccessSpecifier
 from clang.cindex import StorageClass
 from clang.cindex import TypeKind
 from clang.cindex import Config
@@ -67,10 +68,13 @@ class Rule(object):
 class ScopePrefixRule(object):
     def __init__(self, pattern_obj):
         self.name = "ScopePrefixRule"
-        self.rule_names = ["Global", "Static", "ClassMember", "StructMember"]
+        self.rule_names = ["Global", "Static", "ClassMemberPrivate", "ClassMemberProtected",
+                           "ClassMemberPublic", "StructMember"]
         self.global_prefix = ""
         self.static_prefix = ""
-        self.class_member_prefix = ""
+        self.class_member_private_prefix = ""
+        self.class_member_protected_prefix = ""
+        self.class_member_public_prefix = ""
         self.struct_member_prefix = ""
 
         try:
@@ -79,8 +83,12 @@ class ScopePrefixRule(object):
                     self.global_prefix = value
                 elif key == "Static":
                     self.static_prefix = value
-                elif key == "ClassMember":
-                    self.class_member_prefix = value
+                elif key == "ClassMemberPrivate":
+                    self.class_member_private_prefix = value
+                elif key == "ClassMemberProtected":
+                    self.class_member_protected_prefix = value
+                elif key == "ClassMemberPublic":
+                    self.class_member_public_prefix = value
                 elif key == "StructMember":
                     self.struct_member_prefix = value
                 else:
@@ -154,7 +162,12 @@ class VariableNameRule(object):
                                   node.storage_class == StorageClass.NONE):
             return self.scope_prefix_rule.global_prefix
         elif (scope is CursorKind.CLASS_DECL):
-            return self.scope_prefix_rule.class_member_prefix
+            if (node.access_specifier is AccessSpecifier.PRIVATE):
+                return self.scope_prefix_rule.class_member_private_prefix
+            elif (node.access_specifier is AccessSpecifier.PROTECTED):
+                return self.scope_prefix_rule.class_member_protected_prefix
+            elif (node.access_specifier is AccessSpecifier.PUBLIC):
+                return self.scope_prefix_rule.class_member_public_prefix
         return ""
 
     def get_datatype_prefix(self, node):

@@ -5,7 +5,9 @@ VariableName:
     ScopePrefix:
         Global: 'g_'
         Static: 's_'
-        ClassMember: 'm_'
+        ClassMemberPrivate: '_'
+        ClassMemberProtected: ''
+        ClassMemberPublic: 'm_'
     DataTypePrefix:
         String: 'str'
         Integer: 'n'

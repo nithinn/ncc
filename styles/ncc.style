@@ -115,7 +115,9 @@ VariableName:
     ScopePrefix:
         Global: ''
         Static: ''
-        ClassMember: ''
+        ClassMemberPrivate: ''
+        ClassMemberProtected: ''
+        ClassMemberPublic: ''
     DataTypePrefix:
         String: ''
         Integer: ''
