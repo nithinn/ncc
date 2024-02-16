@@ -67,11 +67,13 @@ class Rule(object):
 class ScopePrefixRule(object):
     def __init__(self, pattern_obj):
         self.name = "ScopePrefixRule"
-        self.rule_names = ["Global", "Static", "ClassMember", "StructMember"]
+        self.rule_names = ["Global", "Static", "ClassMember", "StructMember", "Variable", "Parameter"]
         self.global_prefix = ""
         self.static_prefix = ""
         self.class_member_prefix = ""
         self.struct_member_prefix = ""
+        self.variable_prefix = ""
+        self.parameter_prefix = ""
 
         try:
             for key, value in pattern_obj.items():
@@ -83,6 +85,10 @@ class ScopePrefixRule(object):
                     self.class_member_prefix = value
                 elif key == "StructMember":
                     self.struct_member_prefix = value
+                elif key == "Variable":
+                    self.variable_prefix = value
+                elif key == "Parameter":
+                    self.parameter_prefix = value
                 else:
                     raise ValueError(key)
         except ValueError as e:
@@ -150,11 +156,17 @@ class VariableNameRule(object):
     def get_scope_prefix(self, node, scope=None):
         if node.storage_class == StorageClass.STATIC:
             return self.scope_prefix_rule.static_prefix
-        elif (scope is None) and (node.storage_class == StorageClass.EXTERN or
-                                  node.storage_class == StorageClass.NONE):
+        elif (scope is None or scope is CursorKind.NAMESPACE) and (node.storage_class == StorageClass.EXTERN or
+                                                                   node.storage_class == StorageClass.NONE):
             return self.scope_prefix_rule.global_prefix
-        elif (scope is CursorKind.CLASS_DECL):
+        elif (scope in [CursorKind.CLASS_DECL, CursorKind.CLASS_TEMPLATE]):
             return self.scope_prefix_rule.class_member_prefix
+        elif (scope is CursorKind.STRUCT_DECL):
+            return self.scope_prefix_rule.struct_member_prefix
+        elif (node.kind is CursorKind.VAR_DECL):
+            return self.scope_prefix_rule.variable_prefix
+        elif (node.kind is CursorKind.PARM_DECL):
+            return self.scope_prefix_rule.parameter_prefix
         return ""
 
     def get_datatype_prefix(self, node):
